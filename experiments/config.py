@@ -1,5 +1,6 @@
 # experiments/config.py
 import datetime
+import os
 
 import numpy as np
 
@@ -106,3 +107,44 @@ def get_timestamped_filename(base_name: str, extension: str = "json") -> str:
     # 3. 将基础名称、时间戳和扩展名拼接起来
     # f-string 是现代Python中拼接字符串的最佳方式
     return f"{base_name}_{timestamp}.{extension}"
+
+
+def get_timestamp(filename: str):
+    timestamp = filename.split('results')[1]
+    return timestamp
+
+
+def get_experiment_acceptance_pdf_name(experiment_num: int, timestamp):
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    acceptance_fig_path = os.path.join(project_root, PARAMS['RESULTS_DIR'], f"exp{experiment_num}_acceptance_comparison_{timestamp}.pdf")
+    return acceptance_fig_path
+
+
+def get_experiment_cost_pdf_name(experiment_num: int, timestamp):
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    cost_fig_path = os.path.join(project_root, PARAMS['RESULTS_DIR'], f"exp{experiment_num}_cost_comparison_{timestamp}.pdf")
+    return cost_fig_path
+
+
+def get_experiment_1_acceptance_pdf_name(timestamp):
+    return get_experiment_acceptance_pdf_name(experiment_num=1, timestamp=timestamp)
+
+
+def get_experiment_2_acceptance_pdf_name(timestamp):
+    return get_experiment_acceptance_pdf_name(experiment_num=2, timestamp=timestamp)
+
+
+def get_experiment_3_acceptance_pdf_name(timestamp):
+    return get_experiment_acceptance_pdf_name(experiment_num=3, timestamp=timestamp)
+
+
+def get_experiment_1_cost_pdf_name(timestamp):
+    return get_experiment_cost_pdf_name(experiment_num=1, timestamp=timestamp)
+
+
+def get_experiment_2_cost_pdf_name(timestamp):
+    return get_experiment_cost_pdf_name(experiment_num=2, timestamp=timestamp)
+
+
+def get_experiment_3_cost_pdf_name(timestamp):
+    return get_experiment_cost_pdf_name(experiment_num=3, timestamp=timestamp)
