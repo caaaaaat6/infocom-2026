@@ -1,4 +1,5 @@
 # main.py
+import argparse
 import random
 import time
 from typing import List
@@ -7,6 +8,7 @@ from core.algorithm import find_min_cost_feasible_path
 from core.encoding_schemes import DEFAULT_SCHEMES
 from core.graph_transformer import transform_graph
 from core.network_generator import create_random_network
+from experiments import run_experiment_1, run_experiment_2, plot_results
 
 
 def get_source_and_dest_from_super_switches(super_switches: List[int], seed):
@@ -64,6 +66,54 @@ def run_multi_flow_experiment():
     print("2. 建立并求解整数线性规划(ILP)或其松弛版本(LP)，以选择最佳的路径组合。")
 
 
+def main(run_experiment_3=None):
+    # 1. 创建一个命令行参数解析器
+    parser = argparse.ArgumentParser(
+        description="Run experiments for the Quantum Routing project."
+    )
+
+    # 2. 添加一个参数来选择要运行的实验
+    # `choices` 参数限制了用户只能输入我们定义好的选项
+    parser.add_argument(
+        'experiment_name',
+        type=str,
+        choices=['exp1', 'exp2', 'exp3', 'plot', 'all'],
+        help="The name of the experiment to run ('exp1', 'exp2', 'exp3', 'plot', or 'all')."
+    )
+
+    # 3. 解析命令行传入的参数
+    args = parser.parse_args()
+
+    # 4. 根据参数，调用对应的函数
+    print("==============================================")
+    print("=      Quantum Routing Experiment Runner     =")
+    print("==============================================")
+
+    if args.experiment_name == 'exp1' or args.experiment_name == 'all':
+        print("\n>>> Starting Experiment 1: Core Algorithm Validation...")
+        run_experiment_1.main()
+
+    if args.experiment_name == 'exp2' or args.experiment_name == 'all':
+        print("\n>>> Starting Experiment 2: Multi-Scheme Advantage...")
+        run_experiment_2.main() # 假设你已经创建了这个文件和函数
+
+    if args.experiment_name == 'exp3' or args.experiment_name == 'all':
+        print("\n>>> Starting Experiment 3: Multi-Flow Performance...")
+        run_experiment_3.main() # 假设你已经创建了这个文件和函数
+
+    if args.experiment_name == 'plot':
+        print("\n>>> Generating result plots...")
+        plot_results.main() # 假设你的绘图逻辑都在这个脚本里
+
+    print("\n--- All selected tasks finished. ---")
+
+
 if __name__ == "__main__":
-    run_single_flow_experiment()
-    # run_multi_flow_experiment()
+    # 增加一个 try-except 块，可以在没有提供参数时给出提示
+    try:
+        # run_single_flow_experiment()
+        main()
+    except TypeError:
+        print("\n错误: 请提供一个实验名称来运行。")
+        print("用法: python main.py [exp1|exp2|exp3|plot|all]")
+        print("例如: python main.py exp1")

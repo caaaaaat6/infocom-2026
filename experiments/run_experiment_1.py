@@ -6,15 +6,15 @@ import numpy as np
 from tqdm import tqdm  # tqdm 是一个漂亮的进度条库，对于长时间运行的模拟很有用
 
 # 导入配置和项目模块
-import config
+import experiments.config as config
 from core.network_generator import create_random_network
 from core.graph_transformer import transform_graph, transform_graph_to_directed
 from core.algorithm import find_min_cost_feasible_path
-from core.encoding_schemes import EncodingScheme, SCHEME_B
+from core.encoding_schemes import EncodingScheme, SCHEME_B, SCHEME_145_1_9
 from baselines.greedy_baselines import find_path_decode_always, find_path_forward_always
 
 # 为实验一，我们只使用一个单编码方案
-SINGLE_SCHEME = SCHEME_B
+SINGLE_SCHEME = SCHEME_145_1_9
 
 
 def main():

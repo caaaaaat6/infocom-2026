@@ -211,15 +211,15 @@ DEFAULT_SCHEMES = [SCHEME_B]
 # 假设你已经为它们准备好了 f_j 系数文件
 SCHEME_41_1_3 = EncodingScheme(name="Surface_41_1_5", n=41, k=1, d=5, cost=8,
                               t_cycle=8e-6,
-                              fj_filepath="data/Surface_L.csv.txt")
+                              fj_filepath="data/Surface_L.csv")
 
 SCHEME_85_1_7 = EncodingScheme(name="Surface_85_1_7", n=85, k=1, d=7, cost=10,
                               t_cycle=10e-6,
-                              fj_filepath="data/Surface_L.csv.txt")
+                              fj_filepath="data/Surface_L.csv")
 
 SCHEME_145_1_9 = EncodingScheme(name="Surface_145_1_9", n=145, k=1, d=9, cost=50,
                                t_cycle=50e-6,
-                               fj_filepath="data/Surface_L.csv.txt")
+                               fj_filepath="data/Surface_L.csv")
 
 # --- 定义编码组合 ---
 # 单一方案列表，用于基线

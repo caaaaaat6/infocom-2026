@@ -6,7 +6,7 @@ import numpy as np
 from tqdm import tqdm
 
 # 使用绝对路径导入所有需要的模块
-import config
+import experiments.config as config
 from core.network_generator import create_random_network
 from core.graph_transformer import transform_graph
 from core.algorithm import find_min_cost_feasible_path
@@ -17,7 +17,7 @@ from core.encoding_schemes import (
     SINGLE_SCHEME_145_1_9 as SINGLE_SCHEME_D9,
     MULTI_SCHEME_PORTFOLIO
 )
-from config import EXP2_RESULTS_FILE
+from experiments.config import EXP2_RESULTS_FILE
 
 
 def main():
