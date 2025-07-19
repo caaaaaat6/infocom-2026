@@ -8,7 +8,8 @@ from core.algorithm import find_min_cost_feasible_path
 from core.encoding_schemes import DEFAULT_SCHEMES
 from core.graph_transformer import transform_graph
 from core.network_generator import create_random_network
-from experiments import run_experiment_1, run_experiment_2, run_experiment_1_paralizing, plot_results
+from experiments import run_experiment_1, run_experiment_2, run_experiment_1_paralizing, plot_results, \
+    run_experiment_2_paralizing
 
 
 def get_source_and_dest_from_super_switches(super_switches: List[int], seed):
@@ -77,7 +78,7 @@ def main(run_experiment_3=None):
     parser.add_argument(
         'experiment_name',
         type=str,
-        choices=['exp1', 'exp2', 'exp3', 'exp1p', 'plot', 'all'],
+        choices=['exp1', 'exp2', 'exp3', 'exp1p', 'exp2p', 'plot', 'all'],
         help="The name of the experiment to run ('exp1', 'exp2', 'exp3', 'plot', or 'all')."
     )
 
@@ -100,6 +101,10 @@ def main(run_experiment_3=None):
     if args.experiment_name == 'exp2' or args.experiment_name == 'all':
         print("\n>>> Starting Experiment 2: Multi-Scheme Advantage...")
         run_experiment_2.main() # 假设你已经创建了这个文件和函数
+
+    if args.experiment_name == 'exp2p' or args.experiment_name == 'all':
+        print("\n>>> Starting Experiment 2 In Parallel: Multi-Scheme Advantage...")
+        run_experiment_2_paralizing.main() # 假设你已经创建了这个文件和函数
 
     if args.experiment_name == 'exp3' or args.experiment_name == 'all':
         print("\n>>> Starting Experiment 3: Multi-Flow Performance...")

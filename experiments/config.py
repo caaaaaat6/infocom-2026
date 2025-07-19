@@ -4,10 +4,10 @@ import datetime
 import numpy as np
 
 # --- 通用模拟参数 ---
-NUM_RUNS = 100  # 每个数据点的统计运行次数
-DEFAULT_NUM_NODES = 100
+NUM_RUNS = 100 # 每个数据点的统计运行次数
+DEFAULT_NUM_NODES = 500
 DEFAULT_AVG_DEGREE = 4
-DEFAULT_P_SUPER_SWITCH = 1
+DEFAULT_P_SUPER_SWITCH = 0.4
 
 # --- 物理参数 ---
 FIBER_ATTENUATION_DB_PER_KM = 0.15

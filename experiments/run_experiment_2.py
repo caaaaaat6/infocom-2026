@@ -45,10 +45,9 @@ def main():
             for i in range(config.NUM_RUNS):
                 pbar.set_postfix(r_theta=f'{r_theta:.3f}', run=f'{i + 1}/{config.NUM_RUNS}')
 
-                G = create_random_network(config.DEFAULT_NUM_NODES, avg_degree=config.DEFAULT_AVG_DEGREE,
+                G, super_switches= create_random_network(config.DEFAULT_NUM_NODES, avg_degree=config.DEFAULT_AVG_DEGREE,
                                           p_super_switch=config.DEFAULT_P_SUPER_SWITCH)
 
-                super_switches = [n for n, data in G.nodes(data=True) if data['type'] == 'super_switch']
                 if len(super_switches) < 2:
                     pbar.update(1)
                     continue
