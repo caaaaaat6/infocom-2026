@@ -12,7 +12,7 @@ def plot_experiment_1():
 
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     # 将项目根目录和结果文件夹、文件名拼接起来
-    filepath = os.path.join(project_root, config.RESULTS_DIR, 'experiment_1_results_2025-07-19_16-20-24.json')
+    filepath = os.path.join(project_root, config.RESULTS_DIR, 'experiment_1_results_2025-07-19_21-20-44.json')
 
     try:
         with open(filepath, 'r') as f:
