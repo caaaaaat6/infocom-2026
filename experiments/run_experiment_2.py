@@ -75,13 +75,18 @@ def main():
                 all_results[name]['accept_ratios'].append(accept_ratio)
 
     # --- 保存结果 ---
-    results_filename = EXP2_RESULTS_FILE
+    # --- 1. 创建用于保存的总数据结构 ---
+    output_data = {
+        "parameters": config.PARAMS,
+        "results": all_results
+    }
+    results_filename = config.get_timestamped_filename(config.EXP2_RESULTS_FILE)
     os.makedirs(config.RESULTS_DIR, exist_ok=True)
     filepath = os.path.join(config.RESULTS_DIR, results_filename)
 
     print(f"\n实验完成，正在将结果保存到 {filepath} ...")
     with open(filepath, 'w') as f:
-        json.dump(all_results, f, indent=4)
+        json.dump(output_data, f, indent=4)
     print("保存成功。")
 
 

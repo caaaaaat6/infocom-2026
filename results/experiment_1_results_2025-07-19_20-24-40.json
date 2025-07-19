@@ -1,0 +1,152 @@
+{
+    "parameters": {
+        "NUM_RUNS": 100,
+        "DEFAULT_NUM_NODES": 100,
+        "DEFAULT_AVG_DEGREE": 4,
+        "DEFAULT_P_SUPER_SWITCH": 1,
+        "FIBER_ATTENUATION_DB_PER_KM": 0.15,
+        "AVG_LINK_LENGTH_KM": 2.0,
+        "ERROR_RATE_LOW": 0.001,
+        "ERROR_RATE_HIGH": 0.15,
+        "EPSILON": 0.01,
+        "ERROR_THRESHOLDS": [
+            0.01,
+            0.03666666666666667,
+            0.06333333333333332,
+            0.08999999999999998,
+            0.11666666666666665,
+            0.14333333333333334,
+            0.16999999999999998,
+            0.19666666666666666,
+            0.22333333333333333,
+            0.25
+        ],
+        "DISCRETIZATION_DELTA": [
+            1e-06,
+            3.6666666666666666e-06,
+            6.3333333333333326e-06,
+            8.999999999999999e-06,
+            1.1666666666666666e-05,
+            1.4333333333333334e-05,
+            1.7e-05,
+            1.9666666666666666e-05,
+            2.2333333333333332e-05,
+            2.5e-05
+        ],
+        "NUM_FLOWS_LIST": [
+            5,
+            10,
+            15,
+            20,
+            25,
+            30,
+            35,
+            40,
+            45,
+            50
+        ],
+        "MARKERS": [
+            "o",
+            "s",
+            "d",
+            "^",
+            "v",
+            "p"
+        ],
+        "LINESTYLES": [
+            "-",
+            "--",
+            ":",
+            "-."
+        ],
+        "COLORS": [
+            "#1f77b4",
+            "#ff7f0e",
+            "#2ca02c",
+            "#d62728",
+            "#9467bd",
+            "#8c564b"
+        ],
+        "RESULTS_DIR": "results"
+    },
+    "results": {
+        "Proposed": {
+            "costs": [
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN
+            ],
+            "accept_ratios": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+            ]
+        },
+        "Decode-Always": {
+            "costs": [
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN
+            ],
+            "accept_ratios": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+            ]
+        },
+        "Forward-Always": {
+            "costs": [
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN
+            ],
+            "accept_ratios": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    }
+}

@@ -7,6 +7,7 @@ from tqdm import tqdm  # tqdm 是一个漂亮的进度条库，对于长时间�
 
 # 导入配置和项目模块
 import experiments.config as config
+from experiments.config import PARAMS
 from core.network_generator import create_random_network
 from core.graph_transformer import transform_graph, transform_graph_to_directed
 from core.algorithm import find_min_cost_feasible_path
@@ -87,14 +88,21 @@ def main():
                 all_results[name]['costs'].append(avg_cost)
                 all_results[name]['accept_ratios'].append(accept_ratio)
 
-    # --- 将最终结果保存到JSON文件 ---
-    os.makedirs(config.RESULTS_DIR, exist_ok=True)  # 确保结果文件夹存在
-    filepath = os.path.join(config.RESULTS_DIR, config.EXP1_RESULTS_FILE)
+        # --- 1. 创建用于保存的总数据结构 ---
+        output_data = {
+            "parameters": PARAMS,
+            "results": all_results
+        }
+
+        # --- 2. 保存结果 ---
+        results_filename = config.get_timestamped_filename(config.EXP1_RESULTS_FILE)
+        os.makedirs(PARAMS["RESULTS_DIR"], exist_ok=True)
+        filepath = os.path.join(PARAMS["RESULTS_DIR"], results_filename)
 
     print(f"\n实验完成，正在将结果保存到 {filepath} ...")
     with open(filepath, 'w') as f:
         # indent=4 让json文件格式化，易于阅读
-        json.dump(all_results, f, indent=4)
+        json.dump(output_data, f, indent=4)
     print("保存成功。")
 
 

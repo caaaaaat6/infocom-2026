@@ -8,7 +8,7 @@ from core.algorithm import find_min_cost_feasible_path
 from core.encoding_schemes import DEFAULT_SCHEMES
 from core.graph_transformer import transform_graph
 from core.network_generator import create_random_network
-from experiments import run_experiment_1, run_experiment_2, plot_results
+from experiments import run_experiment_1, run_experiment_2, run_experiment_1_paralizing, plot_results
 
 
 def get_source_and_dest_from_super_switches(super_switches: List[int], seed):
@@ -77,7 +77,7 @@ def main(run_experiment_3=None):
     parser.add_argument(
         'experiment_name',
         type=str,
-        choices=['exp1', 'exp2', 'exp3', 'plot', 'all'],
+        choices=['exp1', 'exp2', 'exp3', 'exp1p', 'plot', 'all'],
         help="The name of the experiment to run ('exp1', 'exp2', 'exp3', 'plot', or 'all')."
     )
 
@@ -92,6 +92,10 @@ def main(run_experiment_3=None):
     if args.experiment_name == 'exp1' or args.experiment_name == 'all':
         print("\n>>> Starting Experiment 1: Core Algorithm Validation...")
         run_experiment_1.main()
+
+    if args.experiment_name == 'exp1p' or args.experiment_name == 'all':
+        print("\n>>> Starting Experiment 1 In Parallel: Core Algorithm Validation...")
+        run_experiment_1_paralizing.main()
 
     if args.experiment_name == 'exp2' or args.experiment_name == 'all':
         print("\n>>> Starting Experiment 2: Multi-Scheme Advantage...")
