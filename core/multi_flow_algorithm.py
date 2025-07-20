@@ -1,15 +1,14 @@
 # algorithm.py
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
 
 import networkx as nx
 import numpy as np
 
 from .encoding_schemes import EncodingScheme
 
-# --- 1. 修改标签 (Label) 的数据结构 ---
-# 新增了 `time_since_decode` 和 `logical_lifetime` 两个维度
-# (成本, 离散化精度整数, 自上次解码经过的时间, 物理错误累加器, 前驱节点)
-Label = Tuple[float, int, float, List[float], any]
+# --- 标签结构 ---
+# (成本, 离散化精度整数, 自上次解码经过的时间, 物理错误累加器, 路径节点列表, 当前段的逻辑寿命)
+Label = Tuple[float, int, float, List[float], List[Any], float]
 
 
 def calculate_composite_prob_from_paper(P_v: List[float]) -> float:

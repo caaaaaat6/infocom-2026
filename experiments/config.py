@@ -6,7 +6,7 @@ import numpy as np
 
 # --- 通用模拟参数 ---
 NUM_RUNS = 100 # 每个数据点的统计运行次数
-DEFAULT_NUM_NODES = 500
+DEFAULT_NUM_NODES = 50
 DEFAULT_AVG_DEGREE = 4
 DEFAULT_P_SUPER_SWITCH = 0.4
 
@@ -28,6 +28,7 @@ DISCRETIZATION_DELTA = [EPSILON * error_threshold / DEFAULT_NUM_NODES for error_
 # ...
 
 # --- 实验三: 自变量 (占位) ---
+POOL_SIZE = 5
 NUM_FLOWS_LIST = list(range(5, 51, 5))
 
 # --- 绘图参数 ---
@@ -46,6 +47,7 @@ TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 # 将基础文件名和时间戳拼接起来
 EXP1_RESULTS_FILE = f"experiment_1_results"
 EXP2_RESULTS_FILE = f"experiment_2_results"
+EXP3_RESULTS_FILE = f"experiment_2_results"
 
 # 将参数组织在一个字典中，方便整体引用和保存
 PARAMS = {
@@ -72,6 +74,7 @@ PARAMS = {
     # ...
 
     # --- 实验三: 自变量 (占位) ---
+    'POOL_SIZE': POOL_SIZE,
     'NUM_FLOWS_LIST': NUM_FLOWS_LIST,
 
     # --- 绘图参数 ---

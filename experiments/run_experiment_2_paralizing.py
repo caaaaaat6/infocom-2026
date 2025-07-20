@@ -81,7 +81,7 @@ def main():
     print(f"总共需要执行 {len(tasks)} 次独立的模拟运行。")
 
     # --- 3. 创建进程池并一次性分发所有任务 ---
-    num_processes = cpu_count() - 1
+    num_processes = cpu_count() // 2
     print(f"使用 {num_processes} 个CPU核心进行并行计算...")
 
     results_list = []

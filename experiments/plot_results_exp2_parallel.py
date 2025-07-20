@@ -35,9 +35,11 @@ def plot_experiment_2():
     """
     print("--- 正在绘制实验二的结果图表 (多编码方案对比) ---")
 
-    base_filename = "experiment_2_results_2025-07-19_21-07-18.json"
+    base_filename = "experiment_2_results_2025-07-20_14-04-06.json"
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     filepath = os.path.join(project_root, 'results', base_filename)
+
+    timestamp = config.get_timestamp(filename=base_filename)
 
     if not filepath:
         print(f"错误: 在 '{config.PARAMS['RESULTS_DIR']}/' 目录下找不到任何 '{base_filename}_*.json' 文件。")
@@ -74,7 +76,7 @@ def plot_experiment_2():
     ax1.set_yscale('log')  # 成本差异可能很大，对数坐标轴效果好
 
     # 自动保存图像
-    cost_fig_path = os.path.join(project_root, config.PARAMS['RESULTS_DIR'], "exp2_cost_comparison.pdf")
+    cost_fig_path = config.get_experiment_2_cost_pdf_name(timestamp=timestamp)
     plt.savefig(cost_fig_path, bbox_inches='tight')
     print(f"成本对比图已保存到: {cost_fig_path}")
     plt.show()
@@ -97,7 +99,7 @@ def plot_experiment_2():
     ax2.set_ylim(0, 1.05)  # 接受率在 0 到 1 之间
 
     # 自动保存图像
-    acceptance_fig_path = os.path.join(project_root, config.PARAMS['RESULTS_DIR'], "exp2_acceptance_comparison.pdf")
+    acceptance_fig_path = config.get_experiment_2_acceptance_pdf_name(timestamp=timestamp)
     plt.savefig(acceptance_fig_path, bbox_inches='tight')
     print(f"接受率对比图已保存到: {acceptance_fig_path}")
     plt.show()
