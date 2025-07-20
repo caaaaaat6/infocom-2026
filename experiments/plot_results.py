@@ -12,17 +12,20 @@ def plot_experiment_1():
 
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     # 将项目根目录和结果文件夹、文件名拼接起来
+    filename = 'experiment_1_results_2025-07-19_21-20-44.json'
+    timestamp = config.get_timestamp(filename)
     filepath = os.path.join(project_root, config.RESULTS_DIR, 'experiment_1_results_2025-07-19_21-20-44.json')
 
     try:
         with open(filepath, 'r') as f:
-            results = json.load(f)
+            full_data = json.load(f)
     except FileNotFoundError:
         print(f"错误: 结果文件 {filepath} 未找到。请先运行 run_experiment_1.py。")
         return
 
-    # 获取X轴数据
-    x_values = config.ERROR_THRESHOLDS
+    params = full_data["parameters"]
+    results = full_data["results"]
+    x_values = params["ERROR_THRESHOLDS"]
 
     # --- 图一：平均路径成本 vs. 错误率阈值 ---
     plt.figure(figsize=(8, 6))
@@ -39,7 +42,7 @@ def plot_experiment_1():
     plt.legend()
     plt.grid(True, linestyle='--')
     plt.tight_layout()
-    plt.savefig(os.path.join(project_root, config.RESULTS_DIR, "exp1_cost.pdf"))  # 保存为PDF，用于论文
+    plt.savefig(config.get_experiment_1_cost_pdf_name(timestamp))  # 保存为PDF，用于论文
     plt.show()
 
     # --- 图二：路径接受率 vs. 错误率阈值 ---
@@ -59,7 +62,7 @@ def plot_experiment_1():
     plt.legend()
     plt.grid(True, linestyle='--')
     plt.tight_layout()
-    plt.savefig(os.path.join(project_root, config.RESULTS_DIR, "exp1_acceptance.pdf"))
+    plt.savefig(config.get_experiment_1_acceptance_pdf_name(timestamp))
     plt.show()
 
 
