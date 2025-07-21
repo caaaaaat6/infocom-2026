@@ -1,6 +1,6 @@
 # path_pool_algorithm.py
 from typing import List, Dict, Tuple, Any
-
+from collections import OrderedDict
 import networkx as nx
 import numpy as np
 
@@ -42,14 +42,15 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
 
     # 标签存储结构: {(node, acc_idx) -> [Label_1, Label_2, ...]}
     # 列表中的标签始终按成本升序排列
-    labels: Dict[Tuple[Any, int], List[Label]] = {}
+    labels: Dict[Any, Dict[int, List[Label]]] = {node: {} for node in G_prime.nodes()}
 
     initial_accuracy = 1.0  # 初始精度为100%
     initial_acc_idx = int(np.ceil(initial_accuracy / delta))
     # 初始标签: 成本=0, 精度=满, 距上次解码时间=0, q=[], 前驱=None
     # 初始逻辑寿命设为无穷大，因为源点出发的段没有寿命限制
     initial_label: Label = (0.0, initial_acc_idx, 0.0, [], [source], None)
-    labels[(source, initial_acc_idx)] = [initial_label]
+
+    labels[source][initial_acc_idx] = [initial_label]
 
     # --- 主循环 (伪代码第4-23行) ---
     # Bellman-Ford 的主循环，迭代 |V'|-1 次
@@ -57,12 +58,15 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
         # 遍历图中的每一条边
         for u, v, edge_data in G_prime.edges(data=True):
             # 遍历源节点 u 上所有的标签组
-            keys_for_u = [key for key in labels if key[0] == u]
+            acc_to_labels_dict = labels[u]
 
-            for key_u in keys_for_u:
-                for l_u in labels[key_u]:
+            for label_group in acc_to_labels_dict.values():
+                for l_u in label_group:
 
                     cost_u, acc_idx_u, time_u, P_u, path_u, pred_u = l_u
+
+                    if v in path_u:
+                        continue  # 如果 v 已经在路径中，则忽略此扩展以避免环路
 
                     # 准备生成新标签 l'
                     new_label: Label = None
@@ -111,29 +115,29 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
                     # --- 简化的 M-支配逻辑 ---
                     if new_label:
                         new_cost, new_acc_idx, _, _, _, _ = new_label
-                        label_group_key = (v, new_acc_idx)
 
-                        if label_group_key not in labels:
-                            labels[label_group_key] = []
+                        if new_acc_idx not in labels[v]:
+                            labels[v][new_acc_idx] = []
 
-                        label_group = labels[label_group_key]
+                        label_group = labels[v][new_acc_idx]
 
-                        if len(label_group) < pool_size:
+                        if len(label_group) < 1:
                             label_group.append(new_label)
                             label_group.sort(key=lambda l: l[0])
                         else:
-                            highest_cost_in_group = label_group[-1][0]
-                            if new_cost < highest_cost_in_group:
-                                label_group[-1] = new_label
-                                label_group.sort(key=lambda l: l[0])
+                            label_group[-1] = new_label
+                            # highest_cost_in_group = label_group[-1][0]
+                            # if new_cost < highest_cost_in_group:
+                            #     label_group[-1] = new_label
+                            #     label_group.sort(key=lambda l: l[0])
 
     # --- 路径重构 ---
     final_labels = []
-    # 收集所有到达目的节点的标签
-    # (注意：dest_nodes 是解码节点，所以它们的 acc_idx 是更新过的)
-    for (node, acc_idx), label_list in labels.items():
-        if node in dest_nodes:
-            final_labels.extend(label_list)
+    for dest_node in dest_nodes:
+        # 直接访问目的节点的标签字典
+        if dest_node in labels:
+            for acc_idx, label_list in labels[dest_node].items():
+                final_labels.extend(label_list)
 
     if not final_labels:
         return []

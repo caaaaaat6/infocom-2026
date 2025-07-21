@@ -7,61 +7,40 @@ import networkx as nx
 from tqdm import tqdm
 from multiprocessing import Pool, cpu_count
 from itertools import repeat
+from typing import Dict, List
 
-# 使用绝对路径导入所有需要的模块
+# 使用绝对路径导入
 import config
-from core.network_generator import create_random_network
 from core.graph_transformer import transform_graph
-from core.algorithm import find_min_cost_feasible_path
-from core.encoding_schemes import SINGLE_SCHEME_85_1_7  # 实验三统一使用 d=7 码
-from baselines.multi_flow_baselines import solve_multi_flow_ilp_minimize_congestion
+from core.network_generator import create_random_network
+# 假设你已经把路径池算法放到了 algorithm.py 中
+from core.path_pool_algorithm import find_min_cost_feasible_path
+# 假设实验三统一使用 d=7 的码
+from core.encoding_schemes import SINGLE_SCHEME_145_1_9
+# 导入 ILP 求解器和 Greedy 基线
+from baselines.multi_flow_baselines import solve_multi_flow_ilp_minimize_congestion, calculate_max_congestion
 from config import get_timestamped_filename
 
 
+# --- 并行任务单元 ---
 def generate_path_pool_for_flow(args):
     """
     [并行任务] 为单个流生成候选路径池。
-    在这个简化版本中，我们只为每个流寻找一条最优路径。
+    这个函数会被多个子进程并行调用。
     """
-    flow, G, schemes, r_theta, delta = args
+    # 解包传入的参数
+    flow, G, schemes, r_theta, delta, pool_size = args
     s, d = flow
 
-    # 我们需要回溯路径来获取边的列表
+    # 调用你的路径池生成算法
+    # 注意：这里需要传入 G_original, 即 G
     g_prime = transform_graph(G, schemes)
+    path_pool = find_min_cost_feasible_path(
+        g_prime, schemes, s, d, r_theta, delta, pool_size=pool_size
+    )
 
-    # 假设 find_min_cost_feasible_path 经过修改，可以返回路径的边列表
-    # (cost, error, path_edges) = find_min_cost_feasible_path(...)
-    # 这里我们先用一个简化版本
-    cost, error = find_min_cost_feasible_path(g_prime, schemes, s, d, r_theta, delta)
-
-    if cost is not None:
-        # TODO: 必须实现路径回溯来得到真实的 edge_list
-        # 作为一个临时的占位符，我们用 dijkstra 来获取一个路径的边
-        try:
-            path_nodes = nx.dijkstra_path(G, s, d, weight='cost')
-            path_edges = list(zip(path_nodes[:-1], path_nodes[1:]))
-            path_info = {'cost': cost, 'error': error, 'edge_list': path_edges}
-            return (s, d), [path_info]
-        except nx.NetworkXNoPath:
-            return (s, d), []
-    else:
-        return (s, d), []
-
-
-def calculate_max_congestion(G, flows, chosen_paths: dict):
-    """一个辅助函数，用于计算给定路由方案的最大拥塞。"""
-    if not chosen_paths:
-        return 0
-    link_loads = {edge: 0 for edge in G.edges()}
-    for flow, path_info in chosen_paths.items():
-        if path_info:
-            for u, v in path_info['edge_list']:
-                # 处理无向图的边
-                if (u, v) in link_loads:
-                    link_loads[(u, v)] += 1
-                elif (v, u) in link_loads:
-                    link_loads[(v, u)] += 1
-    return max(link_loads.values()) if link_loads else 0
+    # 返回流的标识符和它对应的路径池
+    return (s, d), path_pool
 
 
 def main():
@@ -70,81 +49,99 @@ def main():
     scenarios = ["Proposed (ILP)", "Greedy-Sequential", "Shortest-Path-First"]
     all_results = {name: {'max_congestion': []} for name in scenarios}
 
-    # 外层循环：遍历并发流的数量
+    # 从配置文件读取实验参数
     num_flows_list = config.PARAMS["NUM_FLOWS_LIST"]
-    for num_flows in tqdm(num_flows_list, desc="Varying Number of Flows"):
+    num_runs = config.PARAMS["NUM_RUNS"]
+    path_pool_size = config.PARAMS.get("PATH_POOL_SIZE", 3)  # 在config中定义路径池大小 M
 
-        run_congestions = {name: [] for name in scenarios}
+    # --- 1. 计算总的迭代次数 (外层*中层) ---
+    total_iterations = len(num_flows_list) * num_runs
 
-        # 内层循环：进行多次统计运行
-        for i in range(config.PARAMS["NUM_RUNS"]):
-            G = create_random_network(config.PARAMS["DEFAULT_NUM_NODES"], seed=i)
-            nodes = list(G.nodes())
-            if len(nodes) < num_flows * 2: continue
+    # --- 2. 创建一个单一的、手动的 tqdm 进度条 ---
+    with tqdm(total=total_iterations, desc="总实验进度 (Experiment 3)") as pbar:
+        # 外层循环：遍历并发流的数量
+        for num_flows in num_flows_list:
 
-            # 生成 num_flows 个不重复的 SD 对
-            flows = []
-            while len(flows) < num_flows:
-                s, d = random.sample(nodes, 2)
-                if (s, d) not in flows and (d, s) not in flows:
-                    flows.append((s, d))
+            run_congestions = {name: [] for name in scenarios}
 
-            # --- 1. 并行生成路径池 (所有算法共用) ---
-            path_pool_tasks = list(zip(flows,
-                                       repeat(G),
-                                       repeat(SINGLE_SCHEME_85_1_7),
-                                       repeat(config.DEFAULT_R_THETA),  # 使用一个固定的 r_theta
-                                       repeat(config.DEFAULT_DELTA)))  # 使用一个固定的 delta
+            # 内层循环：进行多次统计运行
+            for i in range(num_runs):
+                # --- 动态更新后缀信息 ---
+                pbar.set_postfix(m=num_flows, run=f'{i + 1}/{num_runs}')
 
-            path_pools = {}
-            with Pool(processes=cpu_count() - 1) as pool:
-                for flow_id, paths in pool.imap_unordered(generate_path_pool_for_flow, path_pool_tasks):
-                    if paths:
-                        path_pools[flow_id] = paths
+                G, super_switches = create_random_network(config.PARAMS["DEFAULT_NUM_NODES"], seed=i)
+                nodes = list(G.nodes())
 
-            # --- 2. 运行 Proposed (ILP) ---
-            max_congestion_ilp = solve_multi_flow_ilp_minimize_congestion(path_pools, G, flows)
-            if max_congestion_ilp != -1:
-                run_congestions["Proposed (ILP)"].append(max_congestion_ilp)
+                # 生成 num_flows 个不重复的 SD 对
+                flows = []
+                if len(nodes) > 1:
+                    while len(flows) < num_flows:
+                        s, d = random.sample(super_switches, 2)
+                        if (s, d) not in flows and (d, s) not in flows:
+                            flows.append((s, d))
 
-            # --- 3. 运行 Greedy-Sequential 基线 ---
-            # 贪心策略：逐个为流选择其候选池中成本最低的路径
-            greedy_paths = {}
-            G_residual_edges = set(G.edges())
-            sorted_flows = sorted(flows, key=lambda f: random.random())  # 随机顺序
-            for flow in sorted_flows:
-                if flow in path_pools:
-                    # (简化) 只考虑池中第一条路径
-                    candidate_path = path_pools[flow][0]
-                    # 检查资源是否可用
-                    if all((u, v) in G_residual_edges or (v, u) in G_residual_edges for u, v in
-                           candidate_path['edge_list']):
-                        greedy_paths[flow] = candidate_path
-                        # 更新残余资源
-                        for u, v in candidate_path['edge_list']:
-                            if (u, v) in G_residual_edges: G_residual_edges.remove((u, v))
-                            if (v, u) in G_residual_edges: G_residual_edges.remove((v, u))
-            max_congestion_greedy = calculate_max_congestion(G, flows, greedy_paths)
-            run_congestions["Greedy-Sequential"].append(max_congestion_greedy)
+                # --- 阶段一：并行生成路径池 (所有算法共用) ---
+                path_pool_tasks = list(zip(
+                    flows,
+                    repeat(G),
+                    repeat(SINGLE_SCHEME_145_1_9),
+                    repeat(config.PARAMS['DEFAULT_R_THETA']),
+                    repeat(config.PARAMS['DEFAULT_DELTA']),
+                    repeat(path_pool_size)
+                ))
 
-            # --- 4. 运行 Shortest-Path-First 基线 ---
-            spf_paths = {}
-            for s, d in flows:
-                try:
-                    path_nodes = nx.shortest_path(G, s, d)
-                    path_edges = list(zip(path_nodes[:-1], path_nodes[1:]))
-                    spf_paths[(s, d)] = {'edge_list': path_edges}
-                except nx.NetworkXNoPath:
-                    pass
-            max_congestion_spf = calculate_max_congestion(G, flows, spf_paths)
-            run_congestions["Shortest-Path-First"].append(max_congestion_spf)
+                path_pools: Dict[tuple, List[dict]] = {}
+                # 使用 with 语句确保进程池被正确关闭
+                with Pool(processes=cpu_count() - 1) as pool:
+                    # 注意：这里我们不再用 tqdm 包裹 pool.imap_unordered
+                    # 因为我们只想看到总进度
+                    results_iterator = pool.imap_unordered(generate_path_pool_for_flow, path_pool_tasks)
 
-        # 汇总当前 num_flows 的结果
-        for name in scenarios:
-            avg_congestion = np.mean(run_congestions[name]) if run_congestions[name] else np.nan
-            all_results[name]['max_congestion'].append(avg_congestion)
+                    for flow_id, paths in pool.imap_unordered(generate_path_pool_for_flow, path_pool_tasks):
+                        if paths:  # 只添加找到了路径的流
+                            path_pools[flow_id] = paths
 
-    # --- 5. 保存结果 ---
+                # --- 阶段二：串行求解和评估 ---
+
+                # --- 运行 Proposed (ILP) ---
+                max_congestion_ilp = solve_multi_flow_ilp_minimize_congestion(path_pools, G, flows)
+                if max_congestion_ilp != -1:
+                    run_congestions["Proposed (ILP)"].append(max_congestion_ilp)
+
+                # --- 运行 Greedy-Sequential 基线 ---
+                greedy_paths = {}
+                # 随机打乱处理顺序
+                sorted_flows = sorted(list(path_pools.keys()), key=lambda f: random.random())
+                for flow in sorted_flows:
+                    # 贪心地选择池中成本最低的路径
+                    best_path = min(path_pools[flow], key=lambda p: p['cost'])
+                    # 在这个简化的贪心模型中，我们不考虑资源冲突，只看分配后的结果
+                    greedy_paths[flow] = best_path
+                max_congestion_greedy = calculate_max_congestion(G, greedy_paths)
+                run_congestions["Greedy-Sequential"].append(max_congestion_greedy)
+
+                # --- 运行 Shortest-Path-First 基线 ---
+                spf_paths = {}
+                for s, d in flows:
+                    try:
+                        path_nodes = nx.shortest_path(G, s, d, weight='cost')  # 按成本最短
+                        path_edges = list(zip(path_nodes[:-1], path_nodes[1:]))
+                        spf_paths[(s, d)] = {'edge_list': path_edges}
+                    except nx.NetworkXNoPath:
+                        pass
+                max_congestion_spf = calculate_max_congestion(G, spf_paths)
+                run_congestions["Shortest-Path-First"].append(max_congestion_spf)
+
+                # --- 3. 在中层循环的末尾，手动更新总进度条 ---
+                pbar.update(1)
+
+            # 汇总当前 num_flows 的结果
+            for name in scenarios:
+                valid_congestions = [c for c in run_congestions[name] if not np.isnan(c) and c != 0]
+                avg_congestion = np.mean(valid_congestions) if valid_congestions else np.nan
+                all_results[name]['max_congestion'].append(avg_congestion)
+
+    # --- 保存结果 ---
     output_data = {"parameters": config.PARAMS, "results": all_results}
     results_filename = get_timestamped_filename("experiment_3_results")
     os.makedirs(config.PARAMS["RESULTS_DIR"], exist_ok=True)

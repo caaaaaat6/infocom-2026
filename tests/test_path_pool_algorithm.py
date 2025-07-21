@@ -7,6 +7,7 @@ import sys
 
 from core.network_generator import create_random_network
 from main import get_source_and_dest_from_super_switches
+from plotter import plot_network
 
 # --- 路径处理，确保能找到 core 模块 ---
 # 将项目根目录 (infocom-2026) 添加到 sys.path
@@ -51,7 +52,7 @@ class TestPathPoolAlgorithm(unittest.TestCase):
         # self.G_prime = transform_graph(self.G, [self.scheme])
 
         # 1. 实验设置
-        G, super_switches = create_random_network(num_nodes=200, p_super_switch=0.4, avg_degree=4, seed=42)
+        self.G, super_switches = create_random_network(num_nodes=500, p_super_switch=0.4, avg_degree=4, seed=42)
         self.scheme = SCHEME_85_1_7
         self.source, self.dest = get_source_and_dest_from_super_switches(super_switches, seed=42)
         error_threshold = 0.05  # 端到端错误率阈值
@@ -59,11 +60,12 @@ class TestPathPoolAlgorithm(unittest.TestCase):
 
         # 2. 转换图
         print("正在转换原始图 G...")
-        self.G_prime = transform_graph(G, [self.scheme])
-        print(f"原始图: {len(G.nodes())} 个节点, {len(G.edges())} 条边。")
+        self.G_prime = transform_graph(self.G, [self.scheme])
+        print(f"原始图: {len(self.G.nodes())} 个节点, {len(self.G.edges())} 条边。")
         print(f"扩展图: {len(self.G_prime.nodes())} 个节点, {len(self.G_prime.edges())} 条边。")
 
         # 3. 运行算法
+        self.pool_size = 3
         print(f"\n正在寻找从 {self.source} 到 {self.dest} 的路径，错误率阈值为 {error_threshold}...")
         # --- 计时开始 ---
 
@@ -75,14 +77,18 @@ class TestPathPoolAlgorithm(unittest.TestCase):
         start_time = time.perf_counter()
         path_pool = find_min_cost_feasible_path(
             self.G_prime, [self.scheme], self.source, self.dest,
-            error_threshold=0.1, delta=0.01, pool_size=3
+            error_threshold=0.1, delta=0.01, pool_size=self.pool_size
         )
         end_time = time.perf_counter()
         duration = end_time - start_time
 
-        print(f"找到的路径池 (M=1): {path_pool}")
+        print(f"找到的路径池 (M={self.pool_size}):")
+        for path in path_pool:
+            print(f"{path}")
 
         print(f"\n算法运行时间: {duration:.4f} 秒") # <--- 打印运行时间
+
+        # plot_network(G=self.G, source=self.source, dest=self.dest)
 
 
     # def test_find_multiple_paths_for_pool(self):

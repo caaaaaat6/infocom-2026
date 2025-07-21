@@ -5,7 +5,7 @@ import os
 import numpy as np
 
 # --- 通用模拟参数 ---
-NUM_RUNS = 100 # 每个数据点的统计运行次数
+NUM_RUNS = 20 # 每个数据点的统计运行次数
 DEFAULT_NUM_NODES = 50
 DEFAULT_AVG_DEGREE = 4
 DEFAULT_P_SUPER_SWITCH = 0.4
@@ -28,8 +28,11 @@ DISCRETIZATION_DELTA = [EPSILON * error_threshold / DEFAULT_NUM_NODES for error_
 # ...
 
 # --- 实验三: 自变量 (占位) ---
-POOL_SIZE = 5
+POOL_SIZE = 3
+DEFAULT_R_THETA = 0.05
+DEFAULT_DELTA = 0.01
 NUM_FLOWS_LIST = list(range(5, 51, 5))
+NUM_FLOWS_LIST = list(range(1, 11, 2))
 
 # --- 绘图参数 ---
 MARKERS = ['o', 's', 'd', '^', 'v', 'p']
@@ -75,6 +78,8 @@ PARAMS = {
 
     # --- 实验三: 自变量 (占位) ---
     'POOL_SIZE': POOL_SIZE,
+    'DEFAULT_R_THETA': DEFAULT_R_THETA,
+    'DEFAULT_DELTA': DEFAULT_DELTA,
     'NUM_FLOWS_LIST': NUM_FLOWS_LIST,
 
     # --- 绘图参数 ---
