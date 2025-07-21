@@ -1,4 +1,4 @@
-# baselines.py
+# greedy_baselines.py
 from typing import List, Tuple, Any, Dict
 
 import networkx as nx

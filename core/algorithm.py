@@ -46,8 +46,13 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
     dest_nodes = [n for n in G_prime.nodes() if G_prime.nodes[n].get('original_node') == dest]
     if not dest_nodes:  # 如果目的节点是普通交换机
         raise Exception('dest_nodes must be super_switch')
-    dest_nodes.remove(f'{dest}_fo')
-    source = f'{source}_fo'
+    if f'{dest}_fo' in dest_nodes:
+        dest_nodes.remove(f'{dest}_fo')
+
+    if f'{source}_fo' in G_prime.nodes():
+        source = f'{source}_fo'
+    else:
+        source = f'{source}_de_0'
 
     # --- 标签初始化 (伪代码第3行) ---
     # 使用字典来存储标签: {节点 -> [标签列表]}

@@ -1,15 +1,17 @@
-# experiments/run_experiment_1.py
+# experiments/run_experiment_1_parallel.py
 import json
 import os
 import random
 import numpy as np
 from tqdm import tqdm
 from multiprocessing import Pool, cpu_count
+import traceback
 
 # 使用绝对路径导入所有需要的模块
 import experiments.config as config
 from core.network_generator import create_random_network
-from core.graph_transformer import transform_graph, transform_graph_to_directed
+from core.graph_transformer import transform_graph, transform_graph_to_directed, transform_graph_for_decode_always, \
+    transform_graph_for_forward_always
 from core.algorithm import find_min_cost_feasible_path
 from core.encoding_schemes import SCHEME_145_1_9  # 假设实验一使用 d=5 码
 from baselines.greedy_baselines import find_path_decode_always, find_path_forward_always
@@ -45,18 +47,20 @@ def run_single_simulation(run_args):
         results_this_run["Proposed"] = cost_p
 
         # Decode-Always
-        g_da = transform_graph_to_directed(G)
-        cost_da, _ = find_path_decode_always(g_da, schemes_dict["Decode-Always"], source, dest,
+        g_da = transform_graph_for_decode_always(G, [schemes_dict["Decode-Always"]], source)
+        cost_da, _ = find_min_cost_feasible_path(g_da, [schemes_dict["Decode-Always"]], source, dest,
                                                        r_theta, delta)
         results_this_run["Decode-Always"] = cost_da
 
         # Forward-Always
-        cost_fa, _ = find_path_forward_always(G, schemes_dict["Forward-Always"], source, dest, r_theta)
+        g_fa = transform_graph_for_forward_always(G, [schemes_dict["Forward-Always"]], dest)
+        cost_fa, _ = find_min_cost_feasible_path(g_fa, [schemes_dict["Forward-Always"]], source, dest, r_theta, delta)
         results_this_run["Forward-Always"] = cost_fa
 
         return {'r_theta': r_theta, 'costs': results_this_run}
     except Exception as e:
         print(f"一次模拟在 r_theta={r_theta} 时发生错误: {e}")
+        traceback.print_exc()
         return {'r_theta': r_theta,
                 'costs': {"Proposed": None, "Decode-Always": None, "Forward-Always": None}}
 
@@ -93,7 +97,7 @@ def main():
                 results_list.append(result)
                 pbar.update(1)
 
-    # --- 不使用 Pool，直接用一个简单的 for 循环 ---
+    # --- 3.5 串行 debug 用，不使用 Pool，直接用一个简单的 for 循环 ---
     # with tqdm(total=len(tasks), desc="总模拟进度 (Debug Mode)") as pbar:
     #     for task in tasks:
     #         result = run_single_simulation(task)  # 直接调用任务函数
@@ -102,29 +106,6 @@ def main():
 
     # --- 4. 在所有任务完成后，对结果进行后处理和汇总 ---
     print("\n所有模拟运行完成，正在汇总结果...")
-
-    # # 初始化一个数据结构来按 r_theta 存储每次运行的结果
-    # aggregated_results = {r: {name: [] for name in scenarios} for r in config.PARAMS["ERROR_THRESHOLDS"]}
-    #
-    # for result_item in results_list:
-    #     r_theta = result_item['r_theta']
-    #     costs = result_item['costs']
-    #     for algo_name, cost in costs.items():
-    #         aggregated_results[r_theta][algo_name].append(cost)  # 收集所有运行的成本 (None 或 float)
-    #
-    # # 计算最终的平均值和接受率
-    # final_results = {name: {'costs': [], 'accept_ratios': []} for name in scenarios}
-    # for r_theta in config.PARAMS["ERROR_THRESHOLDS"]:
-    #     for name in scenarios:
-    #         # 过滤掉 None 值来计算平均成本
-    #         valid_costs = [c for c in aggregated_results[r_theta][name] if c is not None]
-    #         avg_cost = np.mean(valid_costs) if valid_costs else np.nan
-    #
-    #         # 计算接受率
-    #         accept_ratio = len(valid_costs) / config.PARAMS["NUM_RUNS"]
-    #
-    #         final_results[name]['costs'].append(avg_cost)
-    #         final_results[name]['accept_ratios'].append(accept_ratio)
 
     # 初始化结果存储结构
     all_results = {name: {'costs': [], 'accept_ratios': []} for name in scenarios}
