@@ -9,7 +9,7 @@ from multiprocessing import Pool, cpu_count
 # 使用绝对路径导入所有需要的模块
 import experiments.config as config
 from core.network_generator import create_random_network
-from core.graph_transformer import transform_graph
+from core.graph_transformer import transform_graph, transform_graph_to_directed
 from core.algorithm import find_min_cost_feasible_path
 from core.encoding_schemes import SCHEME_145_1_9  # 假设实验一使用 d=5 码
 from baselines.greedy_baselines import find_path_decode_always, find_path_forward_always
@@ -45,7 +45,8 @@ def run_single_simulation(run_args):
         results_this_run["Proposed"] = cost_p
 
         # Decode-Always
-        cost_da, _ = find_path_decode_always(G, schemes_dict["Decode-Always"], source, dest,
+        g_da = transform_graph_to_directed(G)
+        cost_da, _ = find_path_decode_always(g_da, schemes_dict["Decode-Always"], source, dest,
                                                        r_theta, delta)
         results_this_run["Decode-Always"] = cost_da
 
@@ -92,36 +93,71 @@ def main():
                 results_list.append(result)
                 pbar.update(1)
 
+    # --- 不使用 Pool，直接用一个简单的 for 循环 ---
+    # with tqdm(total=len(tasks), desc="总模拟进度 (Debug Mode)") as pbar:
+    #     for task in tasks:
+    #         result = run_single_simulation(task)  # 直接调用任务函数
+    #         results_list.append(result)
+    #         pbar.update(1)
+
     # --- 4. 在所有任务完成后，对结果进行后处理和汇总 ---
     print("\n所有模拟运行完成，正在汇总结果...")
 
-    # 初始化一个数据结构来按 r_theta 存储每次运行的结果
-    aggregated_results = {r: {name: [] for name in scenarios} for r in config.PARAMS["ERROR_THRESHOLDS"]}
+    # # 初始化一个数据结构来按 r_theta 存储每次运行的结果
+    # aggregated_results = {r: {name: [] for name in scenarios} for r in config.PARAMS["ERROR_THRESHOLDS"]}
+    #
+    # for result_item in results_list:
+    #     r_theta = result_item['r_theta']
+    #     costs = result_item['costs']
+    #     for algo_name, cost in costs.items():
+    #         aggregated_results[r_theta][algo_name].append(cost)  # 收集所有运行的成本 (None 或 float)
+    #
+    # # 计算最终的平均值和接受率
+    # final_results = {name: {'costs': [], 'accept_ratios': []} for name in scenarios}
+    # for r_theta in config.PARAMS["ERROR_THRESHOLDS"]:
+    #     for name in scenarios:
+    #         # 过滤掉 None 值来计算平均成本
+    #         valid_costs = [c for c in aggregated_results[r_theta][name] if c is not None]
+    #         avg_cost = np.mean(valid_costs) if valid_costs else np.nan
+    #
+    #         # 计算接受率
+    #         accept_ratio = len(valid_costs) / config.PARAMS["NUM_RUNS"]
+    #
+    #         final_results[name]['costs'].append(avg_cost)
+    #         final_results[name]['accept_ratios'].append(accept_ratio)
 
-    for result_item in results_list:
-        r_theta = result_item['r_theta']
-        costs = result_item['costs']
-        for algo_name, cost in costs.items():
-            aggregated_results[r_theta][algo_name].append(cost)  # 收集所有运行的成本 (None 或 float)
+    # 初始化结果存储结构
+    all_results = {name: {'costs': [], 'accept_ratios': []} for name in scenarios}
 
-    # 计算最终的平均值和接受率
-    final_results = {name: {'costs': [], 'accept_ratios': []} for name in scenarios}
+    aggregated_by_r = {r: [] for r in config.PARAMS["ERROR_THRESHOLDS"]}
+    for task, result in zip(tasks, results_list):
+        r_theta = task[1]
+        aggregated_by_r[r_theta].append(result)
+
     for r_theta in config.PARAMS["ERROR_THRESHOLDS"]:
+        run_costs = {name: [] for name in scenarios}
+        run_successes = {name: 0 for name in scenarios}
+
+        list_of_results_for_r = aggregated_by_r[r_theta]
+
+        for single_run_result in list_of_results_for_r:
+            cost_dict = single_run_result["costs"]
+            for name in scenarios:
+                cost = cost_dict[name]
+                if cost is not None:
+                    run_costs[name].append(cost)
+                    run_successes[name] += 1
+
         for name in scenarios:
-            # 过滤掉 None 值来计算平均成本
-            valid_costs = [c for c in aggregated_results[r_theta][name] if c is not None]
-            avg_cost = np.mean(valid_costs) if valid_costs else np.nan
-
-            # 计算接受率
-            accept_ratio = len(valid_costs) / config.PARAMS["NUM_RUNS"]
-
-            final_results[name]['costs'].append(avg_cost)
-            final_results[name]['accept_ratios'].append(accept_ratio)
+            avg_cost = np.mean(run_costs[name]) if run_costs[name] else np.nan
+            accept_ratio = run_successes[name] / config.PARAMS["NUM_RUNS"]
+            all_results[name]['costs'].append(avg_cost)
+            all_results[name]['accept_ratios'].append(accept_ratio)
 
     # --- 5. 保存结果 ---
     output_data = {
         "parameters": config.PARAMS,
-        "results": final_results
+        "results": all_results
     }
 
     results_filename = get_timestamped_filename("experiment_1_results")
