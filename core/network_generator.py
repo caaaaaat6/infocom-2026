@@ -21,27 +21,30 @@ def create_random_network(num_nodes, p_super_switch=0.3, avg_degree=3, seed=42):
     - p_super_switch: 一个节点是超级交换机的概率
     - avg_degree: 节点的平均度数
     """
+    # --- 1. 创建一个独立的、由种子控制的 NumPy 随机数生成器 ---
+    rng = np.random.default_rng(seed)
+
     # 使用 Barabasi-Albert 模型生成一个类似无标度的网络
-    G = nx.barabasi_albert_graph(num_nodes, int(avg_degree / 2), seed=seed)
+    G = nx.barabasi_albert_graph(num_nodes, int(avg_degree / 2), seed=rng)
 
     super_switches = []
 
     # 分配节点类型和边的属性
     for node in G.nodes():
-        if random.random() < p_super_switch:
+        if rng.random() < p_super_switch:
             G.nodes[node]['type'] = SUPER_SWITCH  # 超级交换机
             super_switches.append(node)
         else:
             G.nodes[node]['type'] = SWITCH  # 普通交换机
 
     for u, v in G.edges():
-        G.edges[u, v]['cost'] = random.uniform(1, 5)  # 链路成本 (例如，延迟)
+        G.edges[u, v]['cost'] = rng.uniform(1, 5)  # 链路成本 (例如，延迟)
         # --- 通过模拟链路长度来生成物理错误率 ---
         # 1. 使用指数分布生成一个链路长度 L (单位: km)
         # scale = 1/lambda。这里设置平均链路长度为 3 km。
         # 指数分布会生成很多小于3的值和少量远大于3的值。
         avg_length = 2.0
-        link_length = np.random.exponential(scale=avg_length)
+        link_length = rng.exponential(scale=avg_length)
 
         # 确保长度在合理范围内，避免极端值
         link_length = max(0.1, min(link_length, 20.0))  # 假设最短0.1km，最长20km
