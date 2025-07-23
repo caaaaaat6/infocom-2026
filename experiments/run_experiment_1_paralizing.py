@@ -26,6 +26,10 @@ def run_single_simulation(run_args):
     返回一个字典，包含 r_theta 和 本次运行的所有结果。
     """
     run_index, r_theta, schemes_dict, delta = run_args
+    random.seed(run_index)
+
+    # 为了严格的可复现性
+    rng  = np.random.default_rng(run_index)
 
     try:
         G, super_switches = create_random_network(config.PARAMS["DEFAULT_NUM_NODES"],
@@ -37,7 +41,7 @@ def run_single_simulation(run_args):
             return {'r_theta': r_theta,
                     'costs': {"Proposed": None, "Decode-Always": None, "Forward-Always": None}}
 
-        source, dest = random.sample(super_switches, 2)
+        source, dest = rng.choice(super_switches,size=2, replace=False)
 
         results_this_run = {}
 
@@ -91,11 +95,18 @@ def main():
     print(f"使用 {num_processes} 个CPU核心进行并行计算...")
 
     results_list = []
-    with Pool(processes=num_processes) as pool:
-        with tqdm(total=len(tasks), desc="总模拟进度 (Experiment 1)") as pbar:
-            for result in pool.imap_unordered(run_single_simulation, tasks):
-                results_list.append(result)
-                pbar.update(1)
+    # with Pool(processes=num_processes) as pool:
+    #     with tqdm(total=len(tasks), desc="总模拟进度 (Experiment 1)") as pbar:
+    #         for result in pool.imap_unordered(run_single_simulation, tasks):
+    #             results_list.append(result)
+    #             pbar.update(1)
+
+    # --- 3.5 串行 debug 用，不使用 Pool，直接用一个简单的 for 循环 ---
+    with tqdm(total=len(tasks), desc="总模拟进度 (Debug Mode)") as pbar:
+        for task in tasks:
+            result = run_single_simulation(task)  # 直接调用任务函数
+            results_list.append(result)
+            pbar.update(1)
 
     # --- 3.5 串行 debug 用，不使用 Pool，直接用一个简单的 for 循环 ---
     # with tqdm(total=len(tasks), desc="总模拟进度 (Debug Mode)") as pbar:
