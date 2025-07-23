@@ -29,11 +29,11 @@ DISCRETIZATION_DELTA = [EPSILON * error_threshold / DEFAULT_NUM_NODES for error_
 
 # --- 实验三: 自变量 (占位) ---
 POOL_SIZE = 5
-DEFAULT_R_THETA = 0.05
-DEFAULT_DELTA = 0.01
+DEFAULT_R_THETA = 0.5
+DEFAULT_DELTA = 0.0001
 NUM_FLOWS_LIST = list(range(5, 51, 5))
 NUM_FLOWS_LIST = list(range(1, 11, 1))
-# NUM_FLOWS_LIST = list(range(2, 6, 5))
+# NUM_FLOWS_LIST = list(range(1, 6, 6))
 
 # --- 绘图参数 ---
 MARKERS = ['o', 's', 'd', '^', 'v', 'p']

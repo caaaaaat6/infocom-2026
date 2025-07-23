@@ -16,7 +16,7 @@ from core.graph_transformer import transform_graph
 from core.path_pool_algorithm import find_min_cost_feasible_path
 from core.encoding_schemes import SINGLE_SCHEME_145_1_9
 from baselines.multi_flow_baselines import (
-    solve_multi_flow_ilp_minimize_congestion,
+    solve_multi_flow_lp_randomized_rounding,
     calculate_max_congestion,
     run_greedy_assignment,
     run_shortest_path_first
@@ -50,9 +50,11 @@ def run_single_macro_simulation(task_args: dict):
     """
     num_flows = task_args['num_flows']
     run_index = task_args['run_index']
+    p_super_switch = task_args['p_super_switch']
+    avg_degree = task_args['avg_degree']
 
     # 生成网络和流
-    G, super_switches = create_random_network(config.PARAMS["DEFAULT_NUM_NODES"], seed=run_index)
+    G, super_switches = create_random_network(num_nodes=config.PARAMS["DEFAULT_NUM_NODES"], p_super_switch=p_super_switch, avg_degree=avg_degree, seed=run_index)
     flows = []
     if len(super_switches) > 1:
         rng = np.random.default_rng(run_index)
@@ -79,7 +81,7 @@ def run_single_macro_simulation(task_args: dict):
     metrics_results = {}
 
     # 策略一: Proposed (ILP)
-    chosen_paths_ilp, max_congestion_ilp = solve_multi_flow_ilp_minimize_congestion(path_pools, G, flows)
+    chosen_paths_ilp, max_congestion_ilp = solve_multi_flow_lp_randomized_rounding(path_pools, G, flows, seed=run_index)
     metrics_results["Proposed (ILP)"] = {
         "max_congestion": max_congestion_ilp,
         "acceptance_ratio": len(chosen_paths_ilp) / num_flows
@@ -114,8 +116,10 @@ def main():
 
     num_flows_list = config.PARAMS["NUM_FLOWS_LIST"]
     num_runs = config.PARAMS["NUM_RUNS"]
+    p_super_switch = config.PARAMS["DEFAULT_P_SUPER_SWITCH"]
+    avg_degree = config.PARAMS["DEFAULT_AVG_DEGREE"]
 
-    master_tasks = [{'num_flows': nf, 'run_index': i} for nf in num_flows_list for i in range(num_runs)]
+    master_tasks = [{'num_flows': nf, 'run_index': i, 'p_super_switch': p_super_switch, 'avg_degree': avg_degree} for nf in num_flows_list for i in range(num_runs)]
 
     # --- 并行执行所有宏观模拟 ---
     results_list = []

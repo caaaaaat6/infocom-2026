@@ -87,6 +87,83 @@ Tuple[Dict, float]:
     return chosen_paths, np.nan if max_congestion == 0.0 else max_congestion
 
 
+def solve_multi_flow_lp_randomized_rounding(path_pools: Dict[tuple, List[dict]], G: nx.Graph, flows: List[tuple],
+                                            seed: int) -> Tuple[Dict, float]:
+    """
+    使用 LP 松弛 + 随机化取整，来近似求解多流分配问题。
+    返回: (选择的路径字典, 该方案的最大拥塞度)
+    """
+    # 1. 创建 LP 问题实例
+    prob = pulp.LpProblem("Minimize_Max_Congestion_LP", pulp.LpMinimize)
+    rng = np.random.default_rng(seed)
+
+    # 2. 创建决策变量 (现在是 0 到 1 之间的连续变量)
+    x = {}
+    for flow_id, paths in path_pools.items():
+        if not paths: continue
+        for j, _ in enumerate(paths):
+            s, d = flow_id
+            # --- 核心修改: 变量是连续的 ---
+            x[(flow_id, j)] = pulp.LpVariable(f"x_s{s}d{d}_p{j}", lowBound=0, upBound=1, cat=pulp.LpContinuous)
+    y = pulp.LpVariable("y_max_congestion", lowBound=0, cat=pulp.LpContinuous)
+
+    # 3. 目标函数和约束 (与 ILP 完全相同！)
+    prob += y, "Objective_Minimize_Max_Congestion"
+    for flow_id in flows:
+        if flow_id in path_pools and path_pools[flow_id]:
+            prob += pulp.lpSum(
+                [x.get((flow_id, j), 0) for j, _ in enumerate(path_pools[flow_id])]) == 1, f"Flow_{flow_id}_must_route"
+
+    for u, v in G.edges():
+        edge = tuple(sorted((u, v)))
+        congestion_on_link = pulp.lpSum([
+            x.get((flow_id, j), 0)
+            for flow_id, paths in path_pools.items()
+            if paths
+            for j, path_info in enumerate(paths)
+            if tuple(sorted((u, v))) in [tuple(sorted(e)) for e in path_info.get('edge_list', [])]
+        ])
+        prob += congestion_on_link <= y, f"Congestion_on_link_{edge[0]}_{edge[1]}"
+
+    # 4. 求解 LP 问题 (这会非常快)
+    prob.solve(pulp.PULP_CBC_CMD(msg=False))
+
+    # 5. LP 求解失败处理
+    if pulp.LpStatus[prob.status] != "Optimal":
+        print(f"警告: LP 未找到最优解，状态为: {pulp.LpStatus[prob.status]}")
+        return {}, np.nan
+
+    # --- 6. 随机化取整 (Randomized Rounding) ---
+    chosen_paths = {}
+    # LP 的解 x_ij 代表了选择路径 j 的“概率”
+    lp_solution = {var.name: var.varValue for var in prob.variables() if var.name.startswith('x_')}
+
+    for flow_id in flows:
+        if flow_id not in path_pools or not path_pools[flow_id]:
+            continue
+
+        candidate_paths = path_pools[flow_id]
+        probabilities = []
+        for j, _ in enumerate(candidate_paths):
+            s, d = flow_id
+            var_name = f"x_s{s}d{d}_p{j}"
+            probabilities.append(lp_solution.get(var_name, 0))
+
+        # 确保概率总和为 1 (由于浮点数精度问题，需要归一化)
+        prob_sum = sum(probabilities)
+        if prob_sum > 1e-6:  # 避免除零
+            normalized_probs = [p / prob_sum for p in probabilities]
+
+            # --- 核心: 按概率随机选择一条路径 ---
+            chosen_path_idx = rng.choice(len(candidate_paths), p=normalized_probs)
+            chosen_paths[flow_id] = candidate_paths[chosen_path_idx]
+
+    # 7. 计算最终整数解的拥塞度
+    final_max_congestion = calculate_max_congestion(G, chosen_paths)
+
+    return chosen_paths, final_max_congestion
+
+
 def run_greedy_assignment(G: nx.Graph, path_pools: Dict[tuple, List[dict]], seed: int) -> Dict:
     """
     Greedy-Assignment 基线策略。

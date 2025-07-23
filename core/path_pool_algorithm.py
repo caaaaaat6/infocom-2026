@@ -1,6 +1,6 @@
 # path_pool_algorithm.py
 from typing import List, Dict, Tuple, Any
-from collections import OrderedDict
+
 import networkx as nx
 import numpy as np
 
@@ -13,9 +13,8 @@ Label = Tuple[float, int, float, List[float], List[Any], Any]
 
 def calculate_composite_prob_from_paper(P_v: List[float]) -> float:
     """计算复合信道的物理传输错误率。"""
-    if not P_v:
-        return 0.0
-    return 1.0 - np.prod([1.0 - p for p in P_v])
+    p_comp = 1.0 - np.prod([1.0 - p for p in P_v])
+    return p_comp
 
 
 def find_min_cost_feasible_path(G_prime: nx.DiGraph,
@@ -33,11 +32,13 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
     成本最低的路径。
     """
     # 准备工作
-    dest_nodes = [n for n in G_prime.nodes()
-                  if G_prime.nodes[n].get('original_node') == dest
+    dest_nodes = [n for n in G_prime.nodes() if G_prime.nodes[n].get('original_node') == dest
                   and G_prime.nodes[n]['type'] == 'decode']
     if not dest_nodes:  # 如果目的节点是普通交换机
         raise Exception('dest_nodes must be super_switch')
+    if f'{dest}_fo' in dest_nodes:
+        dest_nodes.remove(f'{dest}_fo')
+
     source = f'{source}_fo'
 
     # 标签存储结构: {(node, acc_idx) -> [Label_1, Label_2, ...]}
@@ -49,7 +50,6 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
     # 初始标签: 成本=0, 精度=满, 距上次解码时间=0, q=[], 前驱=None
     # 初始逻辑寿命设为无穷大，因为源点出发的段没有寿命限制
     initial_label: Label = (0.0, initial_acc_idx, 0.0, [], [source], None)
-
     labels[source][initial_acc_idx] = [initial_label]
 
     # --- 主循环 (伪代码第4-23行) ---
@@ -57,6 +57,9 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
     for _ in range(len(G_prime.nodes()) - 1):
         # 遍历图中的每一条边
         for u, v, edge_data in G_prime.edges(data=True):
+            if not labels[u]:  # 如果节点u还没有可达的标签，则跳过
+                continue
+
             # 遍历源节点 u 上所有的标签组
             acc_to_labels_dict = labels[u]
 
