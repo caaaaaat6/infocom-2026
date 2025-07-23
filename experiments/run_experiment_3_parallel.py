@@ -147,7 +147,7 @@ def main():
             all_results[name]['max_congestion'].append(np.mean(valid_c) if valid_c else np.nan)
 
             valid_r = [r for r in aggregated_results[nf][name]['ratios'] if not np.isnan(r)]
-            all_results[name]['acceptance_ratio'].append(np.mean(valid_r) if valid_r else 0.0)
+            all_results[name]['acceptance_ratio'].append(np.mean(valid_r) if valid_r else np.nan)
 
     # --- 保存结果 ---
     output_data = {"parameters": config.PARAMS, "results": all_results}
