@@ -43,104 +43,109 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
 
     # 标签存储结构: {(node, acc_idx) -> [Label_1, Label_2, ...]}
     # 列表中的标签始终按成本升序排列
-    labels: Dict[Any, Dict[int, List[Label]]] = {node: {} for node in G_prime.nodes()}
+    # labels: Dict[Any, Dict[int, List[Label]]] = {node: {} for node in G_prime.nodes()}
+    labels: Dict[Any, List[Label]] = {node: [] for node in G_prime.nodes()}
 
     initial_accuracy = 1.0  # 初始精度为100%
     initial_acc_idx = int(np.ceil(initial_accuracy / delta))
     # 初始标签: 成本=0, 精度=满, 距上次解码时间=0, q=[], 前驱=None
     # 初始逻辑寿命设为无穷大，因为源点出发的段没有寿命限制
     initial_label: Label = (0.0, initial_acc_idx, 0.0, [], [source], None)
-    labels[source][initial_acc_idx] = [initial_label]
+    # labels[source][initial_acc_idx] = [initial_label]
+    labels[source] = [initial_label]
 
+    ii = 0
     # --- 主循环 (伪代码第4-23行) ---
     # Bellman-Ford 的主循环，迭代 |V'|-1 次
-    for _ in range(len(G_prime.nodes()) - 1):
+    for ii in range(len(G_prime.nodes()) - 1):
         # 遍历图中的每一条边
         for u, v, edge_data in G_prime.edges(data=True):
             if not labels[u]:  # 如果节点u还没有可达的标签，则跳过
                 continue
 
-            # 遍历源节点 u 上所有的标签组
-            acc_to_labels_dict = labels[u]
+            for l_u in labels[u]:
 
-            for label_group in acc_to_labels_dict.values():
-                for l_u in label_group:
+                cost_u, acc_idx_u, time_u, P_u, path_u, pred_u = l_u
 
-                    cost_u, acc_idx_u, time_u, P_u, path_u, pred_u = l_u
+                if v in path_u:
+                    continue  # 如果 v 已经在路径中，则忽略此扩展以避免环路
 
-                    if v in path_u:
-                        continue  # 如果 v 已经在路径中，则忽略此扩展以避免环路
+                # 准备生成新标签 l'
+                new_label: Label = None
 
-                    # 准备生成新标签 l'
-                    new_label: Label = None
+                # 累积当前复合信道段的物理错误率
+                P_v = P_u + [edge_data['p_physical']]
 
-                    # 累积当前复合信道段的物理错误率
-                    P_v = P_u + [edge_data['p_physical']]
+                v_node_data = G_prime.nodes[v]  # 目标节点 v 的属性
 
-                    v_node_data = G_prime.nodes[v]  # 目标节点 v 的属性
+                # 计算到达v时，自上次解码以来经过的传播时间
+                time_v = time_u + edge_data['time']
+                new_path = path_u + [v]
 
-                    # 计算到达v时，自上次解码以来经过的传播时间
-                    time_v = time_u + edge_data['time']
-                    new_path = path_u + [v]
+                # --- 情况1：v 是一个解码节点 ---
+                if v_node_data['type'] == 'decode':
+                    scheme_idx = v_node_data['scheme_idx']
+                    scheme = schemes[scheme_idx]
 
-                    # --- 情况1：v 是一个解码节点 ---
-                    if v_node_data['type'] == 'decode':
-                        scheme_idx = v_node_data['scheme_idx']
-                        scheme = schemes[scheme_idx]
+                    # 计算复合信道的物理错误率:
+                    p_comp = calculate_composite_prob_from_paper(P_v)
 
-                        # 计算复合信道的物理错误率:
-                        p_comp = calculate_composite_prob_from_paper(P_v)
+                    # 计算该复合信道的逻辑错误率，使用公式（3）
+                    p_logical = scheme.calculate_logical_error_rate(p_comp)
 
-                        # 计算该复合信道的逻辑错误率，使用公式（3）
-                        p_logical = scheme.calculate_logical_error_rate(p_comp)
+                    # 计算错误率 r，使用公式（4）
+                    eta_u = acc_idx_u * delta
+                    r_old = 1 - eta_u
+                    r = r_old + (1 - r_old) * p_logical
+                    t_cycle = scheme.t_cycle
+                    logical_decoherence_time = t_cycle / p_logical
 
-                        # 计算错误率 r，使用公式（4）
-                        eta_u = acc_idx_u * delta
-                        r_old = 1 - eta_u
-                        r = r_old + (1 - r_old) * p_logical
-                        t_cycle = scheme.t_cycle
-                        logical_decoherence_time = t_cycle / p_logical
+                    # 检查路径是否仍然可行 (错误率是否低于阈值)
+                    if r <= error_threshold and time_v < logical_decoherence_time:
+                        new_cost = cost_u + edge_data['cost'] + v_node_data['op_cost']
+                        eta_v_real = 1.0 - r
+                        acc_idx_v = int(np.ceil(eta_v_real / delta))
+                        # 解码后，物理错误累加器被清空
+                        new_label = (new_cost, acc_idx_v, 0.0, [], new_path, u)
 
-                        # 检查路径是否仍然可行 (错误率是否低于阈值)
-                        if r <= error_threshold and time_v < logical_decoherence_time:
-                            new_cost = cost_u + edge_data['cost'] + v_node_data['op_cost']
-                            eta_v_real = 1.0 - r
-                            acc_idx_v = int(np.ceil(eta_v_real / delta))
-                            # 解码后，物理错误累加器被清空
-                            new_label = (new_cost, acc_idx_v, 0.0, [], new_path, u)
+                # --- 转发 (普通交换机或超级交换机的转发节点) (伪代码第15行) ---
+                else:  # 'switch' or 'forward_only'
+                    # 精度直接由复合信道的物理错误率决定
+                    new_cost = cost_u + edge_data['cost']
+                    new_label = (new_cost, acc_idx_u, time_v, P_v, new_path, u)
 
-                    # --- 转发 (普通交换机或超级交换机的转发节点) (伪代码第15行) ---
-                    else:  # 'switch' or 'forward_only'
-                        # 精度直接由复合信道的物理错误率决定
-                        new_cost = cost_u + edge_data['cost']
-                        new_label = (new_cost, acc_idx_u, time_v, P_v, new_path, u)
+                # --- 简化的 M-支配逻辑 ---
+                if new_label:
+                    new_cost, new_acc_idx, _, _, _, _ = new_label
 
-                    # --- 简化的 M-支配逻辑 ---
-                    if new_label:
-                        new_cost, new_acc_idx, _, _, _, _ = new_label
+                    is_dominated = False
+                    is_dominated_count = 0
 
-                        if new_acc_idx not in labels[v]:
-                            labels[v][new_acc_idx] = []
+                    # 看是否有 pool_size 条 label 支配 new_label
+                    for l_v_existing in list(labels[v]):
+                        if l_v_existing[0] <= new_cost and l_v_existing[1] >= new_acc_idx:
+                            is_dominated_count += 1
+                            # 如果 new_label 被 pool_size 条 label 支配
+                            if is_dominated_count > pool_size:
+                                is_dominated = True
+                                break
 
-                        label_group = labels[v][new_acc_idx]
+                    # 如果没有被 pool_size 条 label 支配
+                    if not is_dominated:
 
-                        if len(label_group) < 1:
-                            label_group.append(new_label)
-                            label_group.sort(key=lambda l: l[0])
-                        else:
-                            label_group[-1] = new_label
-                            # highest_cost_in_group = label_group[-1][0]
-                            # if new_cost < highest_cost_in_group:
-                            #     label_group[-1] = new_label
-                            #     label_group.sort(key=lambda l: l[0])
+                        # 保留 pool_size 条旧标签
+                        label_list = list(labels[v])
+                        label_list.sort(key=lambda l: l[0])
+                        labels[v] = label_list[:pool_size]
+                        labels[v].append(new_label)
 
     # --- 路径重构 ---
     final_labels = []
     for dest_node in dest_nodes:
         # 直接访问目的节点的标签字典
         if dest_node in labels:
-            for acc_idx, label_list in labels[dest_node].items():
-                final_labels.extend(label_list)
+            for label_list in labels[dest_node]:
+                final_labels.append(label_list)
 
     if not final_labels:
         return []

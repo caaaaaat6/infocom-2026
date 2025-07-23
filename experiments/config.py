@@ -6,7 +6,7 @@ import numpy as np
 
 # --- 通用模拟参数 ---
 NUM_RUNS = 100 # 每个数据点的统计运行次数
-DEFAULT_NUM_NODES = 500
+DEFAULT_NUM_NODES = 50
 DEFAULT_AVG_DEGREE = 4
 DEFAULT_P_SUPER_SWITCH = 0.4
 
@@ -29,7 +29,7 @@ DISCRETIZATION_DELTA = [EPSILON * error_threshold / DEFAULT_NUM_NODES for error_
 
 # --- 实验三: 自变量 (占位) ---
 POOL_SIZE = 5
-DEFAULT_R_THETA = 0.5
+DEFAULT_R_THETA = 0.05
 DEFAULT_DELTA = 0.0001
 NUM_FLOWS_LIST = list(range(5, 51, 5))
 NUM_FLOWS_LIST = list(range(1, 11, 1))
@@ -169,5 +169,5 @@ def get_experiment_3_congestion_pdf_name(timestamp):
     return get_experiment_pdf_name(experiment_num=3, timestamp=timestamp, exp_name="congestion")
 
 
-# def get_experiment_3_acceptance_pdf_name(timestamp):
-#     return get_experiment_pdf_name(experiment_num=3, timestamp=timestamp, exp_name="acceptance")
+def get_experiment_3_congestion_per_throughput_pdf_name(timestamp):
+    return get_experiment_pdf_name(experiment_num=3, timestamp=timestamp, exp_name="congestion_per_throughput")

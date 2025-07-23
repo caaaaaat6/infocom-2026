@@ -2,6 +2,8 @@
 import json
 import os
 import random
+import traceback
+
 import numpy as np
 import networkx as nx
 from tqdm import tqdm
@@ -39,6 +41,7 @@ def generate_path_pool_for_flow(args: tuple):
             path['edge_list'] = path.pop('edges', [])
         return (s, d), path_pool
     except Exception as e:
+        traceback.print_exc()
         print(f"为流 {s}->{d} 生成路径池时出错: {e}")
         return (s, d), []
 
@@ -80,11 +83,11 @@ def run_single_macro_simulation(task_args: dict):
     # --- 阶段二：应用不同的分配策略 ---
     metrics_results = {}
 
-    # 策略一: Proposed (ILP)
-    chosen_paths_ilp, max_congestion_ilp = solve_multi_flow_lp_randomized_rounding(path_pools, G, flows, seed=run_index)
-    metrics_results["Proposed (ILP)"] = {
-        "max_congestion": max_congestion_ilp,
-        "acceptance_ratio": len(chosen_paths_ilp) / num_flows
+    # 策略一: Proposed (LP)
+    chosen_paths_lp, max_congestion_lp = solve_multi_flow_lp_randomized_rounding(path_pools, G, flows, seed=run_index)
+    metrics_results["Proposed (LP)"] = {
+        "max_congestion": max_congestion_lp,
+        "acceptance_ratio": len(chosen_paths_lp) / num_flows
     }
 
     # 策略二: Greedy-Assignment
@@ -111,7 +114,7 @@ def main():
     print('实验参数:')
     print(json.dumps(config.PARAMS, indent=4))
 
-    scenarios = ["Proposed (ILP)", "Greedy-Assignment", "Shortest-Path-First"]
+    scenarios = ["Proposed (LP)", "Greedy-Assignment", "Shortest-Path-First"]
     all_results = {name: {'max_congestion': [], 'acceptance_ratio': []} for name in scenarios}
 
     num_flows_list = config.PARAMS["NUM_FLOWS_LIST"]
