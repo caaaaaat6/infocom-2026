@@ -5,8 +5,8 @@ import os
 import numpy as np
 
 # --- 通用模拟参数 ---
-NUM_RUNS = 500 # 每个数据点的统计运行次数
-DEFAULT_NUM_NODES = 200
+NUM_RUNS = 100 # 每个数据点的统计运行次数
+DEFAULT_NUM_NODES = 500
 DEFAULT_AVG_DEGREE = 4
 DEFAULT_P_SUPER_SWITCH = 0.4
 
@@ -28,11 +28,12 @@ DISCRETIZATION_DELTA = [EPSILON * error_threshold / DEFAULT_NUM_NODES for error_
 # ...
 
 # --- 实验三: 自变量 (占位) ---
-POOL_SIZE = 3
+POOL_SIZE = 5
 DEFAULT_R_THETA = 0.05
 DEFAULT_DELTA = 0.01
 NUM_FLOWS_LIST = list(range(5, 51, 5))
-NUM_FLOWS_LIST = list(range(1, 11, 2))
+NUM_FLOWS_LIST = list(range(1, 11, 1))
+# NUM_FLOWS_LIST = list(range(2, 6, 5))
 
 # --- 绘图参数 ---
 MARKERS = ['o', 's', 'd', '^', 'v', 'p']
@@ -122,6 +123,12 @@ def get_timestamp(filename: str):
     return timestamp
 
 
+def get_experiment_pdf_name(experiment_num: int, timestamp, exp_name: str):
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    acceptance_fig_path = os.path.join(project_root, PARAMS['RESULTS_DIR'], f"exp{experiment_num}_{exp_name}_comparison_{timestamp}.pdf")
+    return acceptance_fig_path
+
+
 def get_experiment_acceptance_pdf_name(experiment_num: int, timestamp):
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     acceptance_fig_path = os.path.join(project_root, PARAMS['RESULTS_DIR'], f"exp{experiment_num}_acceptance_comparison_{timestamp}.pdf")
@@ -156,3 +163,11 @@ def get_experiment_2_cost_pdf_name(timestamp):
 
 def get_experiment_3_cost_pdf_name(timestamp):
     return get_experiment_cost_pdf_name(experiment_num=3, timestamp=timestamp)
+
+
+def get_experiment_3_congestion_pdf_name(timestamp):
+    return get_experiment_pdf_name(experiment_num=3, timestamp=timestamp, exp_name="congestion")
+
+
+# def get_experiment_3_acceptance_pdf_name(timestamp):
+#     return get_experiment_pdf_name(experiment_num=3, timestamp=timestamp, exp_name="acceptance")

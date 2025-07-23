@@ -1,120 +1,130 @@
 # baselines/multi_flow_baselines.py
 
+import random
 from typing import Dict, List, Tuple
-
+import networkx as nx
 import numpy as np
 import pulp
-import networkx as nx
+
+# 导入核心模块
+from baselines.utils import check_path_feasibility  # 假设你创建了这个辅助函数
+from core.encoding_schemes import EncodingScheme
 
 
-def solve_multi_flow_ilp_minimize_congestion(path_pools: Dict[tuple, List[dict]], G: nx.Graph,
-                                             flows: List[tuple]) -> float:
+def calculate_max_congestion(G: nx.Graph, chosen_paths: Dict[tuple, dict]) -> float:
     """
-    使用 ILP (整数线性规划) 求解多流分配问题，以最小化最大链路拥塞。
-
-    这个函数是你 "Proposed (ILP)" 方案的核心。
-
-    参数:
-    - path_pools: 一个字典，键是流的(s,d)元组，值是该流的候选路径列表。
-                  每个路径是一个包含 'edges' 列表的字典。
-    - G: 原始网络图，用于获取所有链路的列表。
-    - flows: (s,d) 对的列表，代表所有需要被路由的流。
-
-    返回:
-    - float: 计算出的网络中的最小的最大拥塞度。如果无解，返回 -1。
+    一个通用的辅助函数，用于计算给定路由方案的最大拥塞。
     """
-    # 1. 创建问题实例，目标是最小化
+    if not chosen_paths:
+        return np.nan  # 如果没有路由任何流，拥塞度是无效的
+
+    link_loads = {tuple(sorted(edge)): 0 for edge in G.edges()}
+
+    for flow, path_info in chosen_paths.items():
+        if path_info and 'edge_list' in path_info:
+            for u, v in path_info['edge_list']:
+                edge = tuple(sorted((u, v)))
+                if edge in link_loads:
+                    link_loads[edge] += 1
+
+    return max(link_loads.values()) if link_loads else 0
+
+
+def solve_multi_flow_ilp_minimize_congestion(path_pools: Dict[tuple, List[dict]], G: nx.Graph, flows: List[tuple]) -> \
+Tuple[Dict, float]:
+    """
+    使用 ILP 求解多流分配问题，以最小化最大链路拥塞。
+    返回: (选择的路径字典, 最小的最大拥塞度)
+    """
     prob = pulp.LpProblem("Minimize_Max_Congestion", pulp.LpMinimize)
 
-    # 2. 创建决策变量
-    # x_flow_path = 1 如果流 flow 选择了它的第 path_idx 条候选路径
-    x = {}
+    # 决策变量
+    x = {}  # x_flow_path
     for flow_id, paths in path_pools.items():
-        if not paths: continue  # 如果一个流没有候选路径，则跳过
+        if not paths: continue
         for j, _ in enumerate(paths):
-            # 为了让变量名在 PuLP 中唯一且可读
             s, d = flow_id
             x[(flow_id, j)] = pulp.LpVariable(f"x_s{s}d{d}_p{j}", cat=pulp.LpBinary)
-
-    # y = 最大拥塞 (一个连续变量，我们要最小化它)
     y = pulp.LpVariable("y_max_congestion", lowBound=0, cat=pulp.LpContinuous)
 
-    # 3. 设置目标函数: 最小化 y
+    # 目标函数
     prob += y, "Objective_Minimize_Max_Congestion"
 
-    # 4. 添加约束
-    # 约束 1: 每个有可行路径的流，必须恰好选择一条路径
+    # 约束
     for flow_id in flows:
         if flow_id in path_pools and path_pools[flow_id]:
             prob += pulp.lpSum(
                 [x.get((flow_id, j), 0) for j, _ in enumerate(path_pools[flow_id])]) == 1, f"Flow_{flow_id}_must_route"
-        # else:
-        #     # 如果一个流在路径池中不存在，意味着它没有找到任何可行路径
-        #     # 这种情况意味着无法满足所有流，ILP可能会无解
-        #     # 在一个更复杂的模型中，可以允许流被拒绝
-        #     print(f"警告: 流 {flow_id} 没有可行的候选路径，可能导致ILP无解。")
 
-    # 约束 2: 每条物理链路的拥塞程度必须小于等于 y
     for u, v in G.edges():
-        # 累加所有使用了这条边的路径变量
+        edge = tuple(sorted((u, v)))
         congestion_on_link = pulp.lpSum([
             x.get((flow_id, j), 0)
             for flow_id, paths in path_pools.items()
             if paths
             for j, path_info in enumerate(paths)
-            if (u, v) in path_info.get('edges', []) or (v, u) in path_info.get('edges', [])
+            if tuple(sorted((u, v))) in [tuple(sorted(e)) for e in path_info.get('edge_list', [])]
         ])
-        prob += congestion_on_link <= y, f"Congestion_on_link_{u}_{v}"
+        prob += congestion_on_link <= y, f"Congestion_on_link_{edge[0]}_{edge[1]}"
 
-    # 5. 求解问题
-    # 使用 PuLP 捆绑的 CBC (COIN-OR Branch and Cut) 解算器
-    # msg=False 可以关闭冗长的求解过程输出
-    try:
-        prob.solve(pulp.PULP_CBC_CMD(msg=False))
-    except pulp.PulpError as e:
-        print(f"PuLP 求解器出错: {e}")
-        return -1
+    # 求解
+    prob.solve(pulp.PULP_CBC_CMD(msg=False))
 
-    # 6. 返回结果
-    max_congestion = -1
+    # 结果提取
+    chosen_paths = {}
+    max_congestion = np.nan
+
     if pulp.LpStatus[prob.status] == "Optimal":
         max_congestion = pulp.value(prob.objective)
-    elif pulp.LpStatus[prob.status] == "Infeasible":
-        print("警告: ILP 问题无解。这可能意味着在给定约束下，无法为所有流找到路径。")
-    else:
-        print(f"警告: ILP 未找到最优解，状态为: {pulp.LpStatus[prob.status]}")
+        for flow_id, paths in path_pools.items():
+            if not paths: continue
+            for j, path_info in enumerate(paths):
+                var = x.get((flow_id, j))
+                if var and pulp.value(var) == 1:
+                    chosen_paths[flow_id] = path_info
+                    break
 
-    return max_congestion
+    return chosen_paths, np.nan if max_congestion == 0.0 else max_congestion
 
 
-def calculate_max_congestion(G: nx.Graph, chosen_paths: Dict[tuple, dict]) -> int:
+def run_greedy_assignment(G: nx.Graph, path_pools: Dict[tuple, List[dict]], seed: int) -> Dict:
     """
-    一个通用的辅助函数，用于计算给定路由方案的最大拥塞。
-    这是所有多流策略的“裁判”。
-
-    参数:
-    - G: 原始网络图。
-    - chosen_paths: 一个字典 { (s,d): path_info }, path_info 包含 'edges'。
-
-    返回:
-    - int: 网络中的最大链路拥塞度。
+    Greedy-Assignment 基线策略。
     """
-    if not chosen_paths:
-        return np.nan
+    greedy_paths = {}
+    rng = np.random.default_rng(seed)
+    available_flows = list(path_pools.keys())
+    shuffled_flows = rng.permutation(available_flows)
 
-    # 初始化每条边的负载为 0
-    link_loads = {edge: 0 for edge in G.edges()}
+    # --- 核心修改：将 NumPy 数组转换回元组 ---
+    for flow_array in shuffled_flows:
+        # 将 array([s, d]) 转换回元组 (s, d)
+        flow = tuple(flow_array)
 
-    for flow, path_info in chosen_paths.items():
-        if path_info and 'edges' in path_info:
-            for u, v in path_info['edges']:
-                # 在无向图中，(u,v) 和 (v,u) 是同一条边
-                if (u, v) in link_loads:
-                    link_loads[(u, v)] += 1
-                elif (v, u) in link_loads:
-                    link_loads[(v, u)] += 1
-                else:
-                    # 这种情况理论上不应该发生，如果 G 和 path_info 都正确的话
-                    print(f"警告: 路径中包含图中不存在的边 {(u, v)}")
+        pool = path_pools[flow]
+        if pool:
+            best_path_for_this_flow = min(pool, key=lambda p: p.get('cost', float('inf')))
+            greedy_paths[flow] = best_path_for_this_flow
 
-    return max(link_loads.values()) if link_loads else 0
+    return greedy_paths
+
+
+def run_shortest_path_first(G: nx.Graph, flows: List[tuple], scheme: EncodingScheme, r_theta: float,
+                            delta: float) -> Dict:
+    """
+    Shortest-Path-First (SPF) 基线策略，带可行性检查。
+    """
+    spf_paths = {}
+
+    for s, d in flows:
+        try:
+            path_nodes = nx.dijkstra_path(G, s, d, weight='cost')
+
+            # 对这条最短路进行QEC可行性检查
+            if check_path_feasibility(path_nodes, G, scheme, r_theta):
+                path_edges = list(zip(path_nodes[:-1], path_nodes[1:]))
+                spf_paths[(s, d)] = {'edge_list': path_edges, 'nodes': path_nodes}
+        except nx.NetworkXNoPath:
+            pass
+
+    return spf_paths
