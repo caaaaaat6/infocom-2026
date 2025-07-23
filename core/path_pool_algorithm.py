@@ -132,6 +132,9 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
 
                     # 如果没有被 pool_size 条 label 支配
                     if not is_dominated:
+                        # 移除v上所有被新标签支配的旧标签
+                        labels[v][:] = [l for l in labels[v] if not
+                        (new_label[0] <= l[0] and new_label[1] >= l[1])]
 
                         # 保留 pool_size 条旧标签
                         label_list = list(labels[v])
