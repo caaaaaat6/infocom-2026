@@ -32,7 +32,7 @@ POOL_SIZE = 5
 DEFAULT_R_THETA = 0.05
 DEFAULT_DELTA = 0.0001
 NUM_FLOWS_LIST = list(range(5, 51, 5))
-NUM_FLOWS_LIST = list(range(1, 11, 1))
+# NUM_FLOWS_LIST = list(range(1, 11, 1))
 # NUM_FLOWS_LIST = list(range(1, 6, 6))
 
 # --- 绘图参数 ---
