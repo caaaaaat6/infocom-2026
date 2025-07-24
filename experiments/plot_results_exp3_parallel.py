@@ -184,14 +184,15 @@ def plot_experiment_3_congetsion_per_throughput(data_filepath: str, timestamp: s
     ax3.set_title("Experiment 3: Normalized Efficiency of Routing Strategies", fontsize=16, weight='bold')
     ax3.legend(title="Strategy", fontsize=11)
     ax3.grid(True, which='both', linestyle='--', linewidth=0.5)
-    ax3.set_ylim(bottom=0)
+    ax3.set_yscale('log')
+    ax3.set_ylim(bottom=0.1)
     fig3.tight_layout()
     plt.savefig(config.get_experiment_3_congestion_per_throughput_pdf_name(timestamp=timestamp))
     plt.show()
 
 
 def main():
-    filename, timestamp = find_results_file("experiment_3_results_2025-07-23_20-14-09.json")
+    filename, timestamp = find_results_file("experiment_3_results_2025-07-24_01-27-15_mac.json")
     # plot_experiment_3(base_filename='experiment_3_results_2025-07-23_00-26-32.json')
     plot_experiment_3_congetsion_per_throughput(data_filepath=filename, timestamp=timestamp)
 

@@ -186,11 +186,30 @@ def solve_multi_flow_lp_randomized_rounding(path_pools: Dict[tuple, List[dict]],
         # 确保概率总和为 1 (由于浮点数精度问题，需要归一化)
         prob_sum = sum(probabilities)
         if prob_sum > 1e-6:  # 避免除零
+            # --- 归一化 ---
             normalized_probs = [p / prob_sum for p in probabilities]
 
-            # --- 核心: 按概率随机选择一条路径 ---
-            chosen_path_idx = rng.choice(len(candidate_paths), p=normalized_probs)
-            chosen_paths[flow_id] = candidate_paths[chosen_path_idx]
+            # --- 最终校验 (可选，但非常健壮) ---
+            # 再次确保没有因为浮点数运算导致新的微小负数
+            normalized_probs = [max(0, p) for p in normalized_probs]
+            # 再次归一化以确保总和恰好为1
+            final_sum = sum(normalized_probs)
+            if final_sum > 1e-6:
+                normalized_probs = [p / final_sum for p in normalized_probs]
+            else:
+                # 如果所有概率都接近0，则均等分配
+                num_paths = len(candidate_paths)
+                normalized_probs = [1.0 / num_paths] * num_paths
+
+            try:
+                chosen_path_idx = rng.choice(len(candidate_paths), p=normalized_probs)
+                chosen_paths[flow_id] = candidate_paths[chosen_path_idx]
+            except ValueError as e:
+                print(f"错误: rng.choice 失败，即使在清理之后。流: {flow_id}")
+                print(f"  - 归一化后的概率: {normalized_probs}")
+                print(f"  - 概率总和: {sum(normalized_probs)}")
+                # 出现这种情况，选择第一个作为备用方案
+                chosen_paths[flow_id] = candidate_paths[0]
 
     # 7. 计算最终整数解的拥塞度
     final_max_congestion = calculate_max_congestion(G, chosen_paths)
