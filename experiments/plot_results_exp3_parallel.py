@@ -192,7 +192,7 @@ def plot_experiment_3_congetsion_per_throughput(data_filepath: str, timestamp: s
 
 
 def main():
-    filename, timestamp = find_results_file("experiment_3_results_2025-07-24_01-27-15_mac.json")
+    filename, timestamp = find_results_file("final_experiment_3_results_2025-07-24_07-58-04_mac.json")
     # plot_experiment_3(base_filename='experiment_3_results_2025-07-23_00-26-32.json')
     plot_experiment_3_congetsion_per_throughput(data_filepath=filename, timestamp=timestamp)
 
