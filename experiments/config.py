@@ -35,6 +35,11 @@ NUM_FLOWS_LIST = list(range(5, 51, 5))
 # NUM_FLOWS_LIST = list(range(1, 11, 1))
 # NUM_FLOWS_LIST = list(range(1, 6, 6))
 
+# --- 实验四: 自变量 (占位) ---
+NODE_SIZES_FOR_SCALABILITY = [20, 80, 160, 240, 320, 400]
+SCHEME_COUNTS_FOR_SCALABILITY = [1, 2, 3, 4]
+DEFAULT_NUM_NODES_FOR_SCALABILITY = 100
+
 # --- 绘图参数 ---
 MARKERS = ['o', 's', 'd', '^', 'v', 'p']
 LINESTYLES = ['-', '--', ':', '-.']
@@ -51,7 +56,8 @@ TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 # 将基础文件名和时间戳拼接起来
 EXP1_RESULTS_FILE = f"experiment_1_results"
 EXP2_RESULTS_FILE = f"experiment_2_results"
-EXP3_RESULTS_FILE = f"experiment_2_results"
+EXP3_RESULTS_FILE = f"experiment_3_results"
+EXP4_RESULTS_FILE = f"experiment_4_results"
 
 # 将参数组织在一个字典中，方便整体引用和保存
 PARAMS = {
@@ -82,6 +88,11 @@ PARAMS = {
     'DEFAULT_R_THETA': DEFAULT_R_THETA,
     'DEFAULT_DELTA': DEFAULT_DELTA,
     'NUM_FLOWS_LIST': NUM_FLOWS_LIST,
+
+    # --- 实验四：自变量
+    'NODE_SIZES_FOR_SCALABILITY': NODE_SIZES_FOR_SCALABILITY,
+    'SCHEME_COUNTS_FOR_SCALABILITY': SCHEME_COUNTS_FOR_SCALABILITY,
+    'DEFAULT_NUM_NODES_FOR_SCALABILITY': DEFAULT_NUM_NODES_FOR_SCALABILITY,
 
     # --- 绘图参数 ---
     'MARKERS': MARKERS,

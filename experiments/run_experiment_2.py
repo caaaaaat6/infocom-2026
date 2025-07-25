@@ -12,7 +12,7 @@ from core.graph_transformer import transform_graph
 from core.algorithm import find_min_cost_feasible_path
 # --- 1. 导入新的编码方案 ---
 from core.encoding_schemes import (
-    SINGLE_SCHEME_41_1_3 as SINGLE_SCHEME_D5,  # d=5，应该是 n=41 还是 n=25？这里根据你的定义来
+    SINGLE_SCHEME_41_1_5 as SINGLE_SCHEME_D5,  # d=5，应该是 n=41 还是 n=25？这里根据你的定义来
     SINGLE_SCHEME_85_1_7 as SINGLE_SCHEME_D7,
     SINGLE_SCHEME_145_1_9 as SINGLE_SCHEME_D9,
     MULTI_SCHEME_PORTFOLIO

@@ -209,9 +209,12 @@ DEFAULT_SCHEMES = [SCHEME_B]
 
 # --- 实验二所需的编码方案 ---
 # 假设你已经为它们准备好了 f_j 系数文件
-SCHEME_41_1_3 = EncodingScheme(name="Surface_41_1_5", n=41, k=1, d=5, cost=8,
-                              t_cycle=8e-6,
-                              fj_filepath="data/Surface_L.csv")
+SCHEME_13_1_3 = EncodingScheme(name="Surface_13_1_3", n=13, k=1, d=3, cost=5,
+                               t_cycle=5e-6,
+                               fj_filepath='data/Surface_L.csv')
+SCHEME_41_1_5 = EncodingScheme(name="Surface_41_1_5", n=41, k=1, d=5, cost=8,
+                               t_cycle=8e-6,
+                               fj_filepath="data/Surface_L.csv")
 
 SCHEME_85_1_7 = EncodingScheme(name="Surface_85_1_7", n=85, k=1, d=7, cost=10,
                               t_cycle=10e-6,
@@ -223,9 +226,10 @@ SCHEME_145_1_9 = EncodingScheme(name="Surface_145_1_9", n=145, k=1, d=9, cost=50
 
 # --- 定义编码组合 ---
 # 单一方案列表，用于基线
-SINGLE_SCHEME_41_1_3 = [SCHEME_41_1_3]
+SINGLE_SCHEME_13_1_3 = [SCHEME_13_1_3]
+SINGLE_SCHEME_41_1_5 = [SCHEME_41_1_5]
 SINGLE_SCHEME_85_1_7 = [SCHEME_85_1_7]
 SINGLE_SCHEME_145_1_9 = [SCHEME_145_1_9]
 
 # 多方案组合，用于你的 Proposed 算法
-MULTI_SCHEME_PORTFOLIO = [SCHEME_41_1_3, SCHEME_85_1_7, SCHEME_145_1_9]
+MULTI_SCHEME_PORTFOLIO = [SCHEME_13_1_3, SCHEME_41_1_5, SCHEME_85_1_7, SCHEME_145_1_9]

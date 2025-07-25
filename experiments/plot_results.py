@@ -8,7 +8,7 @@ import numpy as np
 from pathlib import Path
 
 # 使用绝对导入
-import config
+import experiments.config as config
 
 def find_results_file(base_name: str) -> (str, str):
     """在结果目录中智能地查找最新的结果文件。"""

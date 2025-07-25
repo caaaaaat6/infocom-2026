@@ -13,7 +13,7 @@ from core.network_generator import create_random_network
 from core.graph_transformer import transform_graph
 from core.algorithm import find_min_cost_feasible_path
 from core.encoding_schemes import (
-    SINGLE_SCHEME_41_1_3,
+    SINGLE_SCHEME_41_1_5,
     SINGLE_SCHEME_85_1_7,
     SINGLE_SCHEME_145_1_9,
     MULTI_SCHEME_PORTFOLIO
@@ -65,7 +65,7 @@ def main():
     # 定义实验场景
     scenarios = {
         "Proposed (Multi-Scheme d=5,7,9)": MULTI_SCHEME_PORTFOLIO,
-        "Single-Scheme (d=5)": SINGLE_SCHEME_41_1_3,
+        "Single-Scheme (d=5)": SINGLE_SCHEME_41_1_5,
         "Single-Scheme (d=7)": SINGLE_SCHEME_85_1_7,
         "Single-Scheme (d=9)": SINGLE_SCHEME_145_1_9
     }

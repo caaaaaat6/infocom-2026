@@ -10,7 +10,7 @@ from core.encoding_schemes import DEFAULT_SCHEMES
 from core.graph_transformer import transform_graph
 from core.network_generator import create_random_network
 from experiments import run_experiment_1, run_experiment_2, run_experiment_1_parallel, plot_results, \
-    run_experiment_2_parallel, run_experiment_3_parallel
+    run_experiment_2_parallel, run_experiment_3_parallel, run_experiment_4_parallel
 
 
 def get_source_and_dest_from_super_switches(super_switches: List[int], seed):
@@ -79,7 +79,7 @@ def main(run_experiment_3=None):
     parser.add_argument(
         'experiment_name',
         type=str,
-        choices=['exp1', 'exp2', 'exp3', 'exp1p', 'exp2p', 'exp3p', 'plot', 'all'],
+        choices=['exp1', 'exp2', 'exp3', 'exp1p', 'exp2p', 'exp3p', 'exp4p', 'plot', 'all'],
         help="The name of the experiment to run ('exp1', 'exp2', 'exp3', 'exp1p', 'exp2p', 'exp3p', 'plot', 'all')."
     )
 
@@ -114,6 +114,10 @@ def main(run_experiment_3=None):
     if args.experiment_name == 'exp3p' or args.experiment_name == 'all':
         print("\n>>> Starting Experiment 3 In Parallel: Multi-Scheme Advantage...")
         run_experiment_3_parallel.main()  # 假设你已经创建了这个文件和函数
+
+    if args.experiment_name == 'exp4p' or args.experiment_name == 'all':
+        print("\n>>> Starting Experiment 3 In Parallel: Multi-Scheme Advantage...")
+        run_experiment_4_parallel.main()  # 假设你已经创建了这个文件和函数
 
     if args.experiment_name == 'plot':
         print("\n>>> Generating result plots...")
