@@ -120,18 +120,41 @@ def run_exp4b_vs_num_schemes():
     # 固定参数: 网络规模
     num_nodes = config.PARAMS.get("DEFAULT_NUM_NODES_FOR_SCALABILITY", 50)
 
+    # 1. 创建所有任务的参数列表
     tasks = []
     for k in scheme_counts:
+        # 从总的方案组合中，取出前 k 个
         schemes_to_use = MULTI_SCHEME_PORTFOLIO[:k]
         for i in range(num_runs):
             tasks.append((i, num_nodes, schemes_to_use))
 
     print(f"总共需要执行 {len(tasks)} 次模拟...")
 
-    # ... (与 4a 相同的并行执行和汇总逻辑) ...
-    # ...
-    # 返回: {"scheme_counts": scheme_counts, "avg_times": avg_times}
-    pass  # 返回值结构应类似
+    # 2. 并行执行所有任务
+    results_list = []
+    with Pool(processes=cpu_count() - 1) as pool:
+        with tqdm(total=len(tasks), desc="Exp 4b Progress (vs. #Schemes)") as pbar:
+            # imap_unordered 能在结果就绪时立即返回，效率高
+            for result in pool.imap_unordered(run_single_scalability_test, tasks):
+                if result is not None and result[1] is not None:
+                    results_list.append(result)
+                pbar.update(1)
+
+    # 3. 汇总结果
+    # aggregated_results: { k -> [time1, time2, ...] }
+    aggregated_results = {k: [] for k in scheme_counts}
+    for key_param, run_time in results_list:
+        # key_param 在这里就是 k (编码方案数量)
+        if key_param in aggregated_results:
+            aggregated_results[key_param].append(run_time)
+
+    avg_times = []
+    for k in scheme_counts:
+        times = aggregated_results[k]
+        avg_times.append(np.mean(times) if times else np.nan)
+
+    # 4. 返回格式化的结果字典
+    return {"scheme_counts": scheme_counts, "avg_times": avg_times}
 
 
 def main():
