@@ -12,7 +12,8 @@ import experiments.config as config
 from core.network_generator import create_random_network
 from core.graph_transformer import transform_graph, transform_graph_to_directed, transform_graph_for_decode_always, \
     transform_graph_for_forward_always
-from core.algorithm import find_min_cost_feasible_path
+# from core.algorithm import find_min_cost_feasible_path
+from core.algorithm_SPFA_based import find_min_cost_feasible_path
 from core.encoding_schemes import SCHEME_145_1_9  # 假设实验一使用 d=5 码
 from baselines.greedy_baselines import find_path_decode_always, find_path_forward_always
 from experiments.config import get_timestamped_filename
