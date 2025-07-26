@@ -55,7 +55,7 @@ def run_single_scalability_test(args: tuple):
         # --- 计时结束 ---
         end_time = time.perf_counter()
 
-        return end_time - start_time
+        return {'num_nodes': num_nodes, 'run_time': end_time - start_time}
 
     except Exception as e:
         print(f"一次模拟在 num_nodes={num_nodes} 时出错: {e}")
@@ -88,20 +88,24 @@ def run_exp4a_vs_network_size():
                     results_list.append(result)
                 pbar.update(1)
 
+    # --- 串行 debug 用 ---
+    # with tqdm(total=len(tasks), desc="总模拟进度 (Debug Mode)") as pbar:
+    #     for task in tasks:
+    #         result = run_single_scalability_test(task)  # 直接调用任务函数
+    #         if result is not None:
+    #             results_list.append(result)
+    #         pbar.update(1)
+
     # 汇总结果
     avg_times = []
     # 这里我们需要将 results_list 重新与 tasks 关联，或者修改返回
     # 一个更简单的汇总方法
     aggregated_results = {n: [] for n in node_sizes}
-    # This is a simplified aggregation, assuming tasks are run in some order
-    # A more robust way is to have the worker return its parameters
-    # Let's assume order is somewhat preserved for simplicity of this example
-    task_idx = 0
-    for n in node_sizes:
-        for i in range(num_runs):
-            if task_idx < len(results_list):
-                aggregated_results[n].append(results_list[task_idx])
-            task_idx += 1
+    for item in results_list:
+        num_nodes = item['num_nodes']
+        run_time = item['run_time']
+        aggregated_results[num_nodes].append(run_time)
+
 
     for n in node_sizes:
         avg_times.append(np.mean(aggregated_results[n]) if aggregated_results[n] else np.nan)
@@ -139,6 +143,14 @@ def run_exp4b_vs_num_schemes():
                 if result is not None:
                     results_list.append(result)
                 pbar.update(1)
+
+    # --- 串行 debug 用 ---
+    # with tqdm(total=len(tasks), desc="Exp 4b Progress (Debug Mode)") as pbar:
+    #     for task in tasks:
+    #         result = run_single_scalability_test(task)  # 直接调用任务函数
+    #         if result is not None:
+    #             results_list.append(result)
+    #         pbar.update(1)
 
     # 3. 汇总结果
     # aggregated_results: { k -> [time1, time2, ...] }
