@@ -136,7 +136,7 @@ def run_exp4b_vs_num_schemes():
         with tqdm(total=len(tasks), desc="Exp 4b Progress (vs. #Schemes)") as pbar:
             # imap_unordered 能在结果就绪时立即返回，效率高
             for result in pool.imap_unordered(run_single_scalability_test, tasks):
-                if result is not None and result[1] is not None:
+                if result is not None:
                     results_list.append(result)
                 pbar.update(1)
 
