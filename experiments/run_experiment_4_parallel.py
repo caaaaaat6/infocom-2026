@@ -137,15 +137,15 @@ def run_exp4b_vs_num_schemes():
 def main():
     """主函数，按顺序运行所有可扩展性实验并保存结果。"""
 
-    results_4a = run_exp4a_vs_network_size()
-    # results_4b = run_exp4b_vs_num_schemes() # 暂时注释，先完成4a
+    # results_4a = run_exp4a_vs_network_size()
+    results_4b = run_exp4b_vs_num_schemes() # 暂时注释，先完成4a
 
     # --- 保存结果 ---
     output_data = {
         "parameters": config.PARAMS,
         "results": {
-            "experiment_4a": results_4a,
-            # "experiment_4b": results_4b,
+            # "experiment_4a": results_4a,
+            "experiment_4b": results_4b,
         }
     }
 
