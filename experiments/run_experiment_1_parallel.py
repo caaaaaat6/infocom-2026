@@ -96,18 +96,18 @@ def main():
     print(f"使用 {num_processes} 个CPU核心进行并行计算...")
 
     results_list = []
-    # with Pool(processes=num_processes) as pool:
-    #     with tqdm(total=len(tasks), desc="总模拟进度 (Experiment 1)") as pbar:
-    #         for result in pool.imap_unordered(run_single_simulation, tasks):
-    #             results_list.append(result)
-    #             pbar.update(1)
+    with Pool(processes=num_processes) as pool:
+        with tqdm(total=len(tasks), desc="总模拟进度 (Experiment 1)") as pbar:
+            for result in pool.imap_unordered(run_single_simulation, tasks):
+                results_list.append(result)
+                pbar.update(1)
 
     # --- 3.5 串行 debug 用，不使用 Pool，直接用一个简单的 for 循环 ---
-    with tqdm(total=len(tasks), desc="总模拟进度 (Debug Mode)") as pbar:
-        for task in tasks:
-            result = run_single_simulation(task)  # 直接调用任务函数
-            results_list.append(result)
-            pbar.update(1)
+    # with tqdm(total=len(tasks), desc="总模拟进度 (Debug Mode)") as pbar:
+    #     for task in tasks:
+    #         result = run_single_simulation(task)  # 直接调用任务函数
+    #         results_list.append(result)
+    #         pbar.update(1)
 
     # --- 3.5 串行 debug 用，不使用 Pool，直接用一个简单的 for 循环 ---
     # with tqdm(total=len(tasks), desc="总模拟进度 (Debug Mode)") as pbar:

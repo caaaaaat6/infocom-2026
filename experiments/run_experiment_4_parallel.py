@@ -12,7 +12,7 @@ from itertools import repeat
 import experiments.config as config
 from core.network_generator import create_random_network
 from core.graph_transformer import transform_graph
-from core.algorithm import find_min_cost_feasible_path
+from core.algorithm_SPFA_based import find_min_cost_feasible_path
 from core.encoding_schemes import MULTI_SCHEME_PORTFOLIO  # 导入包含多种编码的列表
 from experiments.config import get_timestamped_filename
 

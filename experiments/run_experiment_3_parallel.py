@@ -15,7 +15,7 @@ from typing import Dict, List
 import experiments.config as config
 from core.network_generator import create_random_network
 from core.graph_transformer import transform_graph
-from core.path_pool_algorithm import find_min_cost_feasible_path
+from core.path_pool_algorithm_SPFA_based import find_min_cost_feasible_path
 from core.encoding_schemes import SINGLE_SCHEME_145_1_9
 from baselines.multi_flow_baselines import (
     solve_multi_flow_lp_randomized_rounding,

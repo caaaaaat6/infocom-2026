@@ -36,7 +36,7 @@ def plot_single_experiment_results(experiment_name: str, base_filename: str):
     """
     print(f"--- 正在为 {experiment_name} 绘制结果图表 ---")
 
-    base_filename = "experiment_1_results_2025-07-26_05-50-01_SPFA_mac.json"
+    base_filename = "experiment_1_results_2025-07-26_21-07-20.json"
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     filepath = os.path.join(project_root, 'results', base_filename)
 

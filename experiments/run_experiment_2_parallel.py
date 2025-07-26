@@ -11,12 +11,12 @@ from functools import partial
 import experiments.config as config
 from core.network_generator import create_random_network
 from core.graph_transformer import transform_graph
-from core.algorithm import find_min_cost_feasible_path
+from core.algorithm_SPFA_based import find_min_cost_feasible_path
 from core.encoding_schemes import (
     SINGLE_SCHEME_41_1_5,
     SINGLE_SCHEME_85_1_7,
     SINGLE_SCHEME_145_1_9,
-    MULTI_SCHEME_PORTFOLIO
+    MULTI_SCHEME_PORTFOLIO_FOR_EXP2 as MULTI_SCHEME_PORTFOLIO
 )
 from experiments.config import get_timestamped_filename
 
