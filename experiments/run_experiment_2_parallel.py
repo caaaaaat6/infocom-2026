@@ -13,7 +13,7 @@ from core.network_generator import create_random_network
 from core.graph_transformer import transform_graph
 from core.algorithm_SPFA_based import find_min_cost_feasible_path
 from core.encoding_schemes import (
-    SINGLE_SCHEME_41_1_5,
+    SINGLE_SCHEME_13_1_3,
     SINGLE_SCHEME_85_1_7,
     SINGLE_SCHEME_145_1_9,
     MULTI_SCHEME_PORTFOLIO_FOR_EXP2 as MULTI_SCHEME_PORTFOLIO
@@ -64,8 +64,8 @@ def main():
 
     # 定义实验场景
     scenarios = {
-        "Proposed (Multi-Scheme d=5,7,9)": MULTI_SCHEME_PORTFOLIO,
-        "Single-Scheme (d=5)": SINGLE_SCHEME_41_1_5,
+        "Proposed (Multi-Scheme d=3,7,9)": MULTI_SCHEME_PORTFOLIO,
+        "Single-Scheme (d=3)": SINGLE_SCHEME_13_1_3,
         "Single-Scheme (d=7)": SINGLE_SCHEME_85_1_7,
         "Single-Scheme (d=9)": SINGLE_SCHEME_145_1_9
     }
@@ -97,26 +97,6 @@ def main():
 
     # 初始化结果存储结构
     all_results = {name: {'costs': [], 'accept_ratios': []} for name in scenarios}
-
-    # 按 r_theta 对结果进行分组
-    for r_theta in config.PARAMS["ERROR_THRESHOLDS"]:
-        # 筛选出当前 r_theta 对应的所有运行结果
-        # (注意：因为 imap_unordered 是无序的，所以我们需要从完整的 results_list 中筛选)
-        # 更好的方法是在返回结果时也包含 r_theta
-
-        # 我们来改进一下 run_single_simulation 的返回
-        # 让我们假设 run_single_simulation 返回 (r_theta, results_dict)
-        # (这需要修改上面的函数，更简单的方法是继续筛选)
-
-        run_costs = {name: [] for name in scenarios}
-        run_successes = {name: 0 for name in scenarios}
-
-        # 遍历所有结果，找到属于当前r_theta的
-        # (这是一个简化的逻辑，更高效的实现是先分组)
-        #
-        #
-        # --- 一个更高效的汇总逻辑 ---
-        #
 
     aggregated_by_r = {r: [] for r in config.PARAMS["ERROR_THRESHOLDS"]}
     for task, result in zip(tasks, results_list):

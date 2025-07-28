@@ -49,7 +49,7 @@ def run_single_scalability_test(args: tuple):
             source=source,
             dest=dest,
             error_threshold=config.PARAMS['DEFAULT_R_THETA'],
-            delta=config.PARAMS['DEFAULT_DELTA'],
+            delta_eta=config.PARAMS['DEFAULT_DELTA'],
         )
 
         # --- 计时结束 ---

@@ -33,7 +33,8 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
                                 source: int,
                                 dest: int,
                                 error_threshold: float,
-                                delta: float):
+                                delta_eta: float,
+                                delta_t: float=0.00001):
     """
     论文中算法1的Python实现。
     寻找一条在错误率约束下成本最低的可行路径。
@@ -60,7 +61,7 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
     labels: Dict[any, List[Label]] = {node: [] for node in G_prime.nodes()}
 
     initial_accuracy = 1.0  # 初始精度为100%
-    initial_acc_idx = int(np.ceil(initial_accuracy / delta))
+    initial_acc_idx = int(np.ceil(initial_accuracy / delta_eta))
     # 初始标签: 成本=0, 精度=满, 距上次解码时间=0, q=[], 前驱=None
     # 初始逻辑寿命设为无穷大，因为源点出发的段没有寿命限制
     initial_label: Label = (0.0, initial_acc_idx, 0.0, [], None)
@@ -99,7 +100,7 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
                 v_node_data = G_prime.nodes[v]  # 目标节点 v 的属性
 
                 # 计算到达v时，自上次解码以来经过的总时间
-                time_v = time_u + edge_data['time']
+                time_v = np.floor((time_u + edge_data['time']) / delta_t) * delta_t
 
                 # --- 在超级交换机处解码 (伪代码第7-14行) ---
                 if v_node_data['type'] == 'decode':
@@ -113,7 +114,7 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
                     p_logical = scheme.calculate_logical_error_rate(p_comp)
 
                     # 计算错误率 r，使用公式（4）
-                    eta_u = acc_idx_u * delta
+                    eta_u = acc_idx_u * delta_eta
                     r_old = 1 - eta_u
                     r = r_old + (1 - r_old) * p_logical
                     t_cycle = scheme.t_cycle
@@ -123,7 +124,7 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
                     if r <= error_threshold and time_v < logical_decoherence_time:
                         new_cost = cost_u + edge_data['cost'] + v_node_data['op_cost']
                         eta_v_real = 1.0 - r
-                        acc_idx_v = int(np.ceil(eta_v_real / delta))
+                        acc_idx_v = int(np.ceil(eta_v_real / delta_eta))
                         # 解码后，物理错误累加器被清空
                         new_label = (new_cost, acc_idx_v, 0.0, [], u)
 
@@ -135,7 +136,7 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
 
                 # --- 支配性检查与松弛操作 (伪代码第17-20行) ---
                 if new_label:
-                    new_cost, new_acc_idx, _, _, _ = new_label
+                    new_cost, new_acc_idx, new_time, _, _ = new_label
                     # 我们需要知道标签是否真的被更新了
                     is_updated = False
 
@@ -143,16 +144,17 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
 
                     # 检查新标签是否被v上任何已存在标签所支配
                     for l_v_existing in list(labels[v]):
-                        # 如果一个已存在标签的成本更低(或相等)且精度更高(或相等)
+                        # 如果一个已存在标签的成本更低(或相等)且精度更高(或相等)且时间更短(或相等)
                         if (l_v_existing[0] <= new_label[0] and
-                                l_v_existing[1] >= new_label[1]):
+                                l_v_existing[1] >= new_label[1] and
+                                l_v_existing[2] <= new_label[2]):
                             is_dominated = True
                             break
 
                     if not is_dominated:
                         # 移除v上所有被新标签支配的旧标签
                         labels[v][:] = [l for l in labels[v] if not
-                        (new_label[0] <= l[0] and new_label[1] >= l[1])]
+                        (new_label[0] <= l[0] and new_label[1] >= l[1] and new_label[2] <= l[2])]
                         # 添加新标签
                         labels[v].append(new_label)
                         is_updated = True
@@ -177,7 +179,7 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
     # 回溯路径 (这部分需要根据前驱节点信息来完整实现)
     # 目前，我们只返回最终的统计数据
     final_cost = best_path_label[0]
-    final_accuracy = best_path_label[1] * delta
+    final_accuracy = best_path_label[1] * delta_eta
 
     # 返回 (最低成本, 最终错误率)
     return final_cost, 1.0 - final_accuracy
