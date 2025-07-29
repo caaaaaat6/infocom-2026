@@ -147,9 +147,9 @@ class EncodingScheme:
     fj_filepath: str = None
     # f_j 系数: 给定 j 个物理错误时，发生逻辑错误的条件概率
     f_j_coeffs: Dict[int, float] = field(default_factory=dict, init=False)
-    t_cycle: float = 0.0
+    t_logical: float = 0.0
 
-    def __init__(self, name, n, k, d, cost, fj_filepath, t_cycle):
+    def __init__(self, name, n, k, d, cost, fj_filepath, t_logical):
         self.name = name
         self.n = n
         self.k = k
@@ -157,7 +157,7 @@ class EncodingScheme:
         self.cost = cost
         self.fj_filepath = fj_filepath
         self.f_j_coeffs = load_fj_coeffs_from_csv(fj_filepath, d)
-        self.t_cycle = t_cycle
+        self.t_logical = t_logical
         # self.__post_init__()
 
     def __post_init__(self):
@@ -197,10 +197,10 @@ class EncodingScheme:
 
 # --- 用于实验的示例编码方案 ---
 # 一个低成本、低保护度的编码方案
-SCHEME_A = EncodingScheme(name="7比特斯坦码", n=7, k=1, d=3, cost=10, fj_filepath='data/Surface_L.csv', t_cycle=10e-6)
+SCHEME_A = EncodingScheme(name="7比特斯坦码", n=7, k=1, d=3, cost=10, fj_filepath='data/Surface_L.csv', t_logical=10e-6)
 
 # 一个高成本、高保护度的编码方案
-SCHEME_B = EncodingScheme(name="145比特表面码", n=145, k=1, d=9, cost=50, fj_filepath='data/Surface_L.csv', t_cycle=20e-6)
+SCHEME_B = EncodingScheme(name="145比特表面码", n=145, k=1, d=9, cost=50, fj_filepath='data/Surface_L.csv', t_logical=20e-6)
 
 # 超级交换机上可用的编码方案组合
 DEFAULT_SCHEMES = [SCHEME_A, SCHEME_B]
@@ -210,19 +210,19 @@ DEFAULT_SCHEMES = [SCHEME_B]
 # --- 实验二所需的编码方案 ---
 # 假设你已经为它们准备好了 f_j 系数文件
 SCHEME_13_1_3 = EncodingScheme(name="Surface_13_1_3", n=13, k=1, d=3, cost=5,
-                               t_cycle=5e-6,
+                               t_logical=50e-6,
                                fj_filepath='data/Surface_L.csv')
 SCHEME_41_1_5 = EncodingScheme(name="Surface_41_1_5", n=41, k=1, d=5, cost=8,
-                               t_cycle=8e-6,
+                               t_logical=100e-6,
                                fj_filepath="data/Surface_L.csv")
 
 SCHEME_85_1_7 = EncodingScheme(name="Surface_85_1_7", n=85, k=1, d=7, cost=10,
-                              t_cycle=10e-6,
-                              fj_filepath="data/Surface_L.csv")
+                               t_logical=200e-6,
+                               fj_filepath="data/Surface_L.csv")
 
 SCHEME_145_1_9 = EncodingScheme(name="Surface_145_1_9", n=145, k=1, d=9, cost=50,
-                               t_cycle=50e-6,
-                               fj_filepath="data/Surface_L.csv")
+                                t_logical=600e-6,
+                                fj_filepath="data/Surface_L.csv")
 
 # --- 定义编码组合 ---
 # 单一方案列表，用于基线

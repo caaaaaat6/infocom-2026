@@ -57,7 +57,7 @@ def check_path_feasibility(path_nodes: List,
     if final_logical_error < 1e-15:
         t_critical = float('inf')
     else:
-        t_critical = scheme.t_cycle / final_logical_error
+        t_critical = scheme.t_logical / final_logical_error
 
     # 检查总的传播+解码时间是否超过了这个临界时间
     if total_time_with_decode >= t_critical:

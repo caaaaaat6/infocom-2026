@@ -103,7 +103,7 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
                     eta_u = acc_idx_u * delta
                     r_old = 1 - eta_u
                     r = r_old + (1 - r_old) * p_logical
-                    t_cycle = scheme.t_cycle
+                    t_cycle = scheme.t_logical
                     logical_decoherence_time = t_cycle / p_logical
 
                     # 检查路径是否仍然可行 (错误率是否低于阈值)
