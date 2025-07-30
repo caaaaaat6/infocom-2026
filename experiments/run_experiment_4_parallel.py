@@ -55,7 +55,7 @@ def run_single_scalability_test(args: tuple):
         # --- 计时结束 ---
         end_time = time.perf_counter()
 
-        return {'num_nodes': num_nodes, 'run_time': end_time - start_time}
+        return {len(schemes_to_use): schemes_to_use, 'num_nodes': num_nodes, 'run_time': end_time - start_time}
 
     except Exception as e:
         print(f"一次模拟在 num_nodes={num_nodes} 时出错: {e}")
@@ -71,7 +71,7 @@ def run_exp4a_vs_network_size():
     num_runs = config.PARAMS["NUM_RUNS"]
 
     # 固定参数: 使用一个包含3个编码方案的组合
-    schemes_to_use = MULTI_SCHEME_PORTFOLIO[:3]
+    schemes_to_use = MULTI_SCHEME_PORTFOLIO[:4]
 
     tasks = []
     for n in node_sizes:
@@ -155,8 +155,10 @@ def run_exp4b_vs_num_schemes():
     # 3. 汇总结果
     # aggregated_results: { k -> [time1, time2, ...] }
     aggregated_results = {k: [] for k in scheme_counts}
-    for key_param, run_time in results_list:
+    for item_dict in results_list:
         # key_param 在这里就是 k (编码方案数量)
+        key_param, _, _ = item_dict
+        run_time = item_dict['run_time']
         if key_param in aggregated_results:
             aggregated_results[key_param].append(run_time)
 

@@ -109,12 +109,6 @@ def main():
     #         results_list.append(result)
     #         pbar.update(1)
 
-    # --- 3.5 串行 debug 用，不使用 Pool，直接用一个简单的 for 循环 ---
-    # with tqdm(total=len(tasks), desc="总模拟进度 (Debug Mode)") as pbar:
-    #     for task in tasks:
-    #         result = run_single_simulation(task)  # 直接调用任务函数
-    #         results_list.append(result)
-    #         pbar.update(1)
 
     # --- 4. 在所有任务完成后，对结果进行后处理和汇总 ---
     print("\n所有模拟运行完成，正在汇总结果...")
