@@ -34,7 +34,7 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
                                 dest: int,
                                 error_threshold: float,
                                 delta_eta: float,
-                                delta_t: float=0.00001):
+                                delta_t: float=0.0000001):
     """
     论文中算法1的Python实现。
     寻找一条在错误率约束下成本最低的可行路径。

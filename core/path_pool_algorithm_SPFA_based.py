@@ -23,8 +23,9 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
                                 source: int,
                                 dest: int,
                                 error_threshold: float,
-                                delta: float,
-                                pool_size: int = 1):
+                                delta_eta: float,
+                                pool_size: int = 1,
+                                delta_t: float=0.0000001):
     """
     一个可以生成候选路径池的单流算法 (简化版 M-支配逻辑)。
 
@@ -48,7 +49,7 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
     labels: Dict[Any, List[Label]] = {node: [] for node in G_prime.nodes()}
 
     initial_accuracy = 1.0  # 初始精度为100%
-    initial_acc_idx = int(np.ceil(initial_accuracy / delta))
+    initial_acc_idx = int(np.ceil(initial_accuracy / delta_eta))
     # 初始标签: 成本=0, 精度=满, 距上次解码时间=0, q=[], 前驱=None
     # 初始逻辑寿命设为无穷大，因为源点出发的段没有寿命限制
     initial_label: Label = (0.0, initial_acc_idx, 0.0, [], [source], None)
@@ -91,7 +92,7 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
                 v_node_data = G_prime.nodes[v]  # 目标节点 v 的属性
 
                 # 计算到达v时，自上次解码以来经过的传播时间
-                time_v = time_u + edge_data['time']
+                time_v = np.floor((time_u + edge_data['time']) / delta_t) * delta_t
                 new_path = path_u + [v]
 
                 # --- 情况1：v 是一个解码节点 ---
@@ -106,7 +107,7 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
                     p_logical = scheme.calculate_logical_error_rate(p_comp)
 
                     # 计算错误率 r，使用公式（4）
-                    eta_u = acc_idx_u * delta
+                    eta_u = acc_idx_u * delta_eta
                     r_old = 1 - eta_u
                     r = r_old + (1 - r_old) * p_logical
                     logical_decoherence_time = scheme.t_logical
@@ -115,7 +116,7 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
                     if r <= error_threshold and time_v < logical_decoherence_time:
                         new_cost = cost_u + edge_data['cost'] + v_node_data['op_cost']
                         eta_v_real = 1.0 - r
-                        acc_idx_v = int(np.ceil(eta_v_real / delta))
+                        acc_idx_v = int(np.ceil(eta_v_real / delta_eta))
                         # 解码后，物理错误累加器被清空
                         new_label = (new_cost, acc_idx_v, 0.0, [], new_path, u)
 
@@ -127,7 +128,7 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
 
                 # --- 简化的 M-支配逻辑 ---
                 if new_label:
-                    new_cost, new_acc_idx, _, _, _, _ = new_label
+                    new_cost, new_acc_idx, new_time, _, _, _ = new_label
 
                     is_updated = False
                     is_dominated = False
@@ -135,7 +136,9 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
 
                     # 看是否有 pool_size 条 label 支配 new_label
                     for l_v_existing in list(labels[v]):
-                        if l_v_existing[0] <= new_cost and l_v_existing[1] >= new_acc_idx:
+                        if (l_v_existing[0] <= new_cost and
+                             l_v_existing[1] >= new_acc_idx and
+                             l_v_existing[2] <= new_label[2]):
                             is_dominated_count += 1
                             # 如果 new_label 被 pool_size 条 label 支配
                             if is_dominated_count > pool_size:
@@ -145,13 +148,13 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
                     # 如果没有被 pool_size 条 label 支配
                     if not is_dominated:
                         # 移除v上所有被新标签支配的旧标签
-                        labels[v][:] = [l for l in labels[v] if not
-                        (new_label[0] <= l[0] and new_label[1] >= l[1])]
-
-                        # 保留 pool_size 条旧标签
-                        label_list = list(labels[v])
-                        label_list.sort(key=lambda l: l[0])
-                        labels[v] = label_list[:pool_size]
+                        # labels[v][:] = [l for l in labels[v] if not
+                        # (new_label[0] <= l[0] and new_label[1] >= l[1] and new_label[2] <= l[2])]
+                        #
+                        # # 保留 pool_size 条旧标签
+                        # label_list = list(labels[v])
+                        # label_list.sort(key=lambda l: l[0])
+                        # labels[v] = label_list[:pool_size]
 
                         # 加入新标签
                         labels[v].append(new_label)
@@ -185,7 +188,7 @@ def find_min_cost_feasible_path(G_prime: nx.DiGraph,
             break
 
         final_cost = label[0]
-        final_accuracy = label[1] * delta
+        final_accuracy = label[1] * delta_eta
         final_error_rate = 1.0 - final_accuracy
         final_path_nodes_expanded = label[4]
 

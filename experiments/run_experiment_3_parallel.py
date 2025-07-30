@@ -35,7 +35,7 @@ def generate_path_pool_for_flow(args: tuple):
         path_pool = find_min_cost_feasible_path(
             G_prime=transform_graph(G, schemes),
             schemes=schemes, source=s, dest=d,
-            error_threshold=r_theta, delta=delta, pool_size=pool_size
+            error_threshold=r_theta, delta_eta=delta, pool_size=pool_size
         )
         for path in path_pool:
             path['edge_list'] = path.pop('edges', [])

@@ -35,7 +35,7 @@ def plot_experiment_2():
     """
     print("--- 正在绘制实验二的结果图表 (多编码方案对比) ---")
 
-    base_filename = "experiment_2_results_2025-07-28_18-26-16.json"
+    base_filename = "experiment_2_results_2025-07-29_06-58-51.json"
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     filepath = os.path.join(project_root, 'results', base_filename)
 
